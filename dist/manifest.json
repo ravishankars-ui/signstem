@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "SignSTEM",
+  "version": "0.1.0",
+  "description": "An accessible STEM learning companion with Indian Sign Language practice and recognition.",
+  "permissions": ["storage", "tabs"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "SignSTEM"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content.js"],
+      "css": ["content.css"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["learn.html", "assets/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
