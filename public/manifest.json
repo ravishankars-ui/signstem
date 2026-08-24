@@ -1,26 +1,44 @@
 {
   "manifest_version": 3,
-  "name": "SignSTEM",
-  "version": "0.1.0",
-  "description": "An accessible STEM learning companion with Indian Sign Language practice and recognition.",
-  "permissions": ["storage", "tabs"],
+  "name": "3D SignSTEM - Indian Sign Language Learning & Studio",
+  "short_name": "3D SignSTEM",
+  "version": "1.1.0",
+  "description": "Minimal ISL companion with a 3D FBX avatar, voice input, video caption sync, tab audio capture, fingerspelling, quiz mode, and learning paths.",
+  "permissions": ["storage", "tabs", "tabCapture", "sidePanel"],
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; connect-src 'self' https://cdn.jsdelivr.net blob: data:"
+  },
   "background": {
     "service_worker": "background.js"
   },
   "action": {
     "default_popup": "popup.html",
-    "default_title": "SignSTEM"
+    "default_title": "3D SignSTEM - ISL Companion",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
   },
   "content_scripts": [
     {
       "matches": ["http://*/*", "https://*/*"],
       "js": ["content.js"],
-      "css": ["content.css"]
+      "css": ["content.css"],
+      "run_at": "document_end"
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["learn.html", "assets/*"],
+      "resources": ["index.html", "learn.html", "popup.html", "sidepanel.html", "assets/*", "icons/*", "vendor/*"],
       "matches": ["<all_urls>"]
     }
   ]
