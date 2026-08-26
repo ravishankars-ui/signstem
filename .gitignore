@@ -34,3 +34,4 @@ __pycache__/
 # Local system artifacts
 .tempmediaStorage/
 .system_generated/
+sign_avatars_repo/
