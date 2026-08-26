@@ -39,7 +39,7 @@
       </div>
       <div class="ss-avatar-stage" id="ss-stage">
         <iframe id="ss-frame" src="${ext?.runtime ? ext.runtime.getURL('index.html') : 'index.html'}"
-          style="width:100%;height:100%;border:none;background:transparent;" allow="autoplay"></iframe>
+          style="width:100%;height:100%;border:none;background:transparent;" allow="autoplay; camera; microphone; display-capture"></iframe>
       </div>`;
     document.body.appendChild(w);
 
@@ -96,40 +96,82 @@
       minBtn.textContent = '─'; maxBtn.textContent = '□';
     };
 
-    // Caption sync
+    // Live Video Caption Streamer
+    let lastCaptionFull = '';
+
     function tryEnableYT() {
       const b = document.querySelector('.ytp-subtitles-button');
-      if (b?.getAttribute('aria-pressed') !== 'true') try { b?.click(); } catch {}
+      if (b && b.getAttribute('aria-pressed') !== 'true') {
+        try { b.click(); } catch {}
+      }
     }
 
     function getCaption() {
       let t = '';
+      // 1. YouTube Subtitles (.ytp-caption-segment)
       const yt = document.querySelectorAll('.ytp-caption-segment');
-      if (yt?.length) t = [...yt].map(e => e.textContent.trim()).join(' ');
-      if (!t) {
-        const nets = ['.player-timedtext', '.timedtext-text', '[class*="caption-text"]',
-          '[class*="subtitle"]', '.vjs-text-track-display', '.ub-captions-text',
-          '.atvwebplayersdk-captions-text', '[data-testid="subtitle-text"]'];
-        for (const s of nets) { const e = document.querySelector(s); if (e) { t = e.textContent.trim(); if (t) break; } }
+      if (yt && yt.length > 0) {
+        t = Array.from(yt).map(e => e.textContent.trim()).filter(Boolean).join(' ');
       }
-      if (!t) document.querySelectorAll('video').forEach(v => {
-        if (v.textTracks) for (let i = 0; i < v.textTracks.length; i++) {
-          const tr = v.textTracks[i];
-          if (tr.activeCues?.length) { t = [...tr.activeCues].map(c => c.text.replace(/<[^>]*>/g, '')).join(' '); if (t) break; }
+      // 2. Generic Video Player Subtitles & Web Streaming
+      if (!t) {
+        const nets = [
+          '.player-timedtext', '.timedtext-text', '[class*="caption-text"]',
+          '[class*="subtitle"]', '.vjs-text-track-display', '.ub-captions-text',
+          '.atvwebplayersdk-captions-text', '[data-testid="subtitle-text"]',
+          '.captions-text', '.jw-text-track-cue'
+        ];
+        for (const s of nets) {
+          const e = document.querySelector(s);
+          if (e && e.textContent.trim()) {
+            t = e.textContent.trim();
+            break;
+          }
         }
-      });
+      }
+      // 3. HTML5 Video TextTracks
+      if (!t) {
+        document.querySelectorAll('video').forEach(v => {
+          if (v.textTracks) {
+            for (let i = 0; i < v.textTracks.length; i++) {
+              const tr = v.textTracks[i];
+              if (tr.activeCues && tr.activeCues.length > 0) {
+                t = Array.from(tr.activeCues).map(c => c.text.replace(/<[^>]*>/g, '')).join(' ');
+                if (t) break;
+              }
+            }
+          }
+        });
+      }
       return t.trim();
     }
 
     function sync() {
       if (!isSyncActive) return;
       tryEnableYT();
-      const text = getCaption();
-      if (text && text !== lastText) { lastText = text; post({ type: 'PLAY_ISL_SEQUENCE', tokens: text, mode: 'append' }); }
+      const raw = getCaption();
+      if (!raw) return;
+
+      // Strip audio brackets like [Music], (Laughter), [Applause]
+      const text = raw.replace(/\[[^\]]*\]|\([^)]*\)/g, '').replace(/\s+/g, ' ').trim();
+      if (!text || text === lastCaptionFull) return;
+
+      // Smart delta streaming: if current line continues previous line, only append new words
+      if (text.startsWith(lastCaptionFull) && lastCaptionFull.length > 0) {
+        const delta = text.slice(lastCaptionFull.length).trim();
+        lastCaptionFull = text;
+        if (delta.length > 0) {
+          post({ type: 'PLAY_ISL_SEQUENCE', tokens: delta, mode: 'append', isLiveCaption: true });
+        }
+      } else {
+        // New sentence or replaced cue -> Immediately switch to new sentence
+        lastCaptionFull = text;
+        post({ type: 'PLAY_ISL_SEQUENCE', tokens: text, mode: 'replace', isLiveCaption: true });
+      }
     }
 
     new MutationObserver(sync).observe(document.body, { childList: true, subtree: true, characterData: true });
-    setInterval(sync, 300);
+    setInterval(sync, 250);
 
     const syncBtn = $('#ss-sync');
     const syncDot = $('#ss-sync-dot');
@@ -141,6 +183,10 @@
       syncDot.classList.toggle('ss-sync-off', !isSyncActive);
       syncLabel.textContent = isSyncActive ? 'Sync' : 'Off';
       syncBtn.classList.toggle('ss-sync-active', isSyncActive);
+      if (isSyncActive) {
+        lastCaptionFull = '';
+        sync();
+      }
     };
 
     // Tab audio

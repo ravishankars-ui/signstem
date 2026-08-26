@@ -12,7 +12,7 @@ const DEFAULTS = {
 chrome.action.onClicked.addListener(async (tab) => {
   if (tab?.id) {
     try {
-      chrome.tabs.sendMessage(tab.id, { type: 'TOGGLE_ISL_WIDGET' });
+      chrome.tabs.sendMessage(tab.id, { type: 'TOGGLE_ISL_WIDGET' }).catch(() => {});
     } catch (e) {
       console.debug('[SignSTEM] Action click send notice:', e);
     }
@@ -59,6 +59,64 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           break;
         }
 
+        case 'OPEN_SIDE_PANEL': {
+          try {
+            const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (activeTab?.id) {
+              await chrome.sidePanel.open({ tabId: activeTab.id });
+              sendResponse({ ok: true });
+            } else {
+              const [anyTab] = await chrome.tabs.query({ active: true });
+              if (anyTab?.id) {
+                await chrome.sidePanel.open({ tabId: anyTab.id });
+                sendResponse({ ok: true });
+              } else {
+                sendResponse({ ok: false, error: 'No active tab' });
+              }
+            }
+          } catch (err) {
+            console.debug('[SignSTEM] SidePanel open fallback:', err);
+            const url = chrome.runtime.getURL('sidepanel.html');
+            const tab = await chrome.tabs.create({ url });
+            sendResponse({ ok: true, fallback: true, tabId: tab.id });
+          }
+          break;
+        }
+
+        case 'OPEN_POPOUT_WINDOW': {
+          try {
+            const url = chrome.runtime.getURL(message.page || 'index.html');
+            const win = await chrome.windows.create({
+              url,
+              type: 'popup',
+              width: message.width || 420,
+              height: message.height || 660,
+              focused: true,
+            });
+            sendResponse({ ok: true, windowId: win.id });
+          } catch (err) {
+            const url = chrome.runtime.getURL(message.page || 'index.html');
+            const tab = await chrome.tabs.create({ url });
+            sendResponse({ ok: true, tabId: tab.id });
+          }
+          break;
+        }
+
+        case 'TOGGLE_IN_PAGE_WIDGET': {
+          try {
+            const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (activeTab?.id) {
+              chrome.tabs.sendMessage(activeTab.id, { type: 'TOGGLE_ISL_WIDGET' }).catch(() => {});
+              sendResponse({ ok: true });
+            } else {
+              sendResponse({ ok: false, error: 'No active tab found' });
+            }
+          } catch (e) {
+            sendResponse({ ok: false, error: e.message });
+          }
+          break;
+        }
+
         case 'OPEN_RECOGNITION': {
           // Open side panel for live recognition
           try {
@@ -70,7 +128,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               sendResponse({ ok: false, error: 'No active tab' });
             }
           } catch (err) {
-            // Fallback: open as a new tab if side panel not supported
             const url = chrome.runtime.getURL('sidepanel.html');
             const tab = await chrome.tabs.create({ url });
             sendResponse({ ok: true, fallback: true, tabId: tab.id });
@@ -82,22 +139,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           // Relay recognized sign from side panel to the content script widget
           const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
           if (tabs[0]?.id) {
-            try {
-              chrome.tabs.sendMessage(tabs[0].id, {
-                type: 'PLAY_ISL_SEQUENCE',
-                tokens: [message.sign],
-                mode: 'replace',
-              });
-            } catch (e) {
-              console.debug('[SignSTEM] Relay to content script failed:', e);
-            }
+            chrome.tabs.sendMessage(tabs[0].id, {
+              type: 'PLAY_ISL_SEQUENCE',
+              tokens: [message.sign],
+              mode: 'replace',
+            }).catch(() => {});
           }
           sendResponse({ ok: true });
           break;
         }
 
         case 'SIGNSTEM_ANALYZE_SIGN': {
-          // Extension model boundary: Returns local MediaPipe ready status
           sendResponse({
             ok: true,
             model: 'MediaPipe Hands v0.4 (Local Engine)',

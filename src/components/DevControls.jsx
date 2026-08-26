@@ -11,8 +11,6 @@ export function DevControls({
   isIdle,
   currentSpeed,
   onSpeedChange,
-  engineMode,
-  onToggleEngine,
   onOpenCustomizer
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -58,25 +56,6 @@ export function DevControls({
           <div className="panel-header">
             <h4>ISL Speech Simulator</h4>
             <span className="badge">{isIdle ? 'IDLE' : 'SIGNING'}</span>
-          </div>
-
-          {/* Engine Selector */}
-          <div className="engine-toggle-row">
-            <label className="section-label">Engine Mode:</label>
-            <div className="engine-buttons">
-              <button
-                className={`engine-btn ${engineMode === 'vector_avatar' ? 'active' : ''}`}
-                onClick={() => onToggleEngine('vector_avatar')}
-              >
-                👤 Human 2D Avatar (Active)
-              </button>
-              <button
-                className={`engine-btn ${engineMode === 'video' ? 'active' : ''}`}
-                onClick={() => onToggleEngine('video')}
-              >
-                🎬 WebM Video
-              </button>
-            </div>
           </div>
 
           {/* Custom Input */}

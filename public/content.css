@@ -1,46 +1,77 @@
-/* ═══ SignSTEM — Clean Minimal Overlay ═══ */
+/* ═══ SignSTEM — Sleek Glassmorphism Floating Overlay ═══ */
 
 :root {
-  --ss-bg: rgba(10, 12, 24, 0.82);
-  --ss-border: rgba(255, 255, 255, 0.08);
-  --ss-primary: #6366f1;
-  --ss-text: #f1f5f9;
-  --ss-text-dim: #94a3b8;
-  --ss-radius: 18px;
+  --ss-bg: rgba(250, 248, 245, 0.94);
+  --ss-border: rgba(215, 203, 185, 0.7);
+  --ss-primary: #4f46e5;
+  --ss-accent: #c59b27;
+  --ss-text: #1e1b18;
+  --ss-text-dim: #57534e;
+  --ss-radius: 22px;
 }
 
-@keyframes ss-fade-in {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes ss-widget-startup {
+  0% {
+    opacity: 0;
+    transform: translateY(-18px) scale(0.92);
+    filter: blur(10px);
+    box-shadow: 0 0 0 rgba(79, 70, 229, 0);
+  }
+  65% {
+    opacity: 1;
+    transform: translateY(3px) scale(1.015);
+    filter: blur(0px);
+    box-shadow: 0 24px 60px rgba(180, 160, 140, 0.35), 0 0 36px rgba(79, 70, 229, 0.3);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0px);
+    box-shadow: 0 16px 48px rgba(180, 160, 140, 0.25), 0 0 32px rgba(79, 70, 229, 0.1) inset;
+  }
+}
+
+@keyframes ss-neon-pulse {
+  0%, 100% {
+    border-color: rgba(215, 203, 185, 0.7);
+    box-shadow: 0 16px 48px rgba(180, 160, 140, 0.25), 0 0 24px rgba(79, 70, 229, 0.08) inset;
+  }
+  50% {
+    border-color: rgba(79, 70, 229, 0.5);
+    box-shadow: 0 20px 54px rgba(180, 160, 140, 0.35), 0 0 36px rgba(79, 70, 229, 0.15) inset;
+  }
 }
 
 /* ─── Widget ─────────────────────────────────────────── */
 #signstem-isl-widget {
   position: fixed;
-  top: 16px; right: 16px;
-  width: 340px; min-width: 260px; max-width: 560px;
-  min-height: 400px;
+  top: 20px; right: 20px;
+  width: 360px; min-width: 280px; max-width: 580px;
+  height: 520px; min-height: 460px; max-height: 92vh;
   display: flex; flex-direction: column;
   background: var(--ss-bg);
-  backdrop-filter: blur(28px);
-  -webkit-backdrop-filter: blur(28px);
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
   border: 1px solid var(--ss-border);
   border-radius: var(--ss-radius);
   box-shadow:
-    0 8px 32px rgba(0,0,0,0.4),
-    0 0 0 1px rgba(255,255,255,0.04) inset;
+    0 24px 64px -12px rgba(45, 30, 20, 0.28),
+    0 10px 28px -6px rgba(79, 70, 229, 0.16),
+    0 2px 8px rgba(0, 0, 0, 0.04),
+    0 0 0 1px rgba(255, 255, 255, 0.9) inset;
   z-index: 999990;
   font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
   color: var(--ss-text);
   user-select: none;
   overflow: hidden;
-  animation: ss-fade-in 0.3s ease;
-  transition: width 0.3s ease, height 0.3s ease, opacity 0.2s ease;
+  animation: ss-widget-startup 0.45s cubic-bezier(0.16, 1, 0.3, 1), ss-neon-pulse 5s ease-in-out infinite;
+  transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1), height 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
 }
 
 #signstem-isl-widget.ss-expanded {
-  width: 460px !important;
-  min-height: 540px;
+  width: 480px !important;
+  height: 640px !important;
+  min-height: 560px;
 }
 
 #signstem-isl-widget.ss-minimized {
@@ -50,53 +81,60 @@
 /* ─── Header ─────────────────────────────────────────── */
 .ss-widget-header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 6px 10px;
-  background: rgba(255,255,255,0.02);
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.85);
+  border-bottom: 1px solid var(--ss-border);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
   cursor: grab; flex-shrink: 0;
 }
 .ss-widget-header:active { cursor: grabbing; }
 
 .ss-widget-title {
   display: flex; align-items: center; gap: 5px;
-  font-size: 11px; font-weight: 700; color: var(--ss-primary);
+  font-size: 11px; font-weight: 800; color: var(--ss-primary);
   letter-spacing: 0.3px;
+  filter: drop-shadow(0 1px 2px rgba(79, 70, 229, 0.15));
 }
-.ss-title-icon { font-size: 12px; filter: drop-shadow(0 0 4px rgba(99,102,241,0.4)); }
+.ss-title-icon { font-size: 12px; filter: drop-shadow(0 0 5px rgba(79,70,229,0.5)); }
 
 .ss-header-center { display: flex; align-items: center; gap: 3px; }
 
 .ss-hdr-btn {
   display: inline-flex; align-items: center; gap: 3px;
   padding: 3px 7px; border-radius: 7px;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--ss-border);
+  background: #ffffff;
   color: var(--ss-text-dim);
   font-size: 10px; font-weight: 600;
   cursor: pointer; transition: all 0.15s; white-space: nowrap; font-family: inherit;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 .ss-hdr-btn:hover {
-  background: rgba(255,255,255,0.1);
+  background: #f5f0e6;
   color: var(--ss-text);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.07);
 }
 .ss-hdr-btn.ss-sync-active {
-  background: rgba(99,102,241,0.12);
-  border-color: rgba(99,102,241,0.25);
-  color: #a5b4fc;
+  background: rgba(79,70,229,0.1);
+  border-color: rgba(79,70,229,0.3);
+  color: #4f46e5;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.18);
 }
 .ss-hdr-btn.ss-active {
   background: rgba(16,185,129,0.12);
-  border-color: rgba(16,185,129,0.25);
-  color: #6ee7b7;
+  border-color: rgba(16,185,129,0.3);
+  color: #059669;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.18);
 }
 
 .ss-sync-dot {
   width: 5px; height: 5px; border-radius: 50%;
-  background: #22c55e;
-  box-shadow: 0 0 6px rgba(34,197,94,0.5);
+  background: #10b981;
+  box-shadow: 0 0 8px rgba(16,185,129,0.7);
   animation: ss-dot-pulse 2s ease-in-out infinite;
 }
-.ss-sync-dot.ss-sync-off { background: #475569; box-shadow: none; animation: none; }
+.ss-sync-dot.ss-sync-off { background: #8c827a; box-shadow: none; animation: none; }
 
 @keyframes ss-dot-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
 
@@ -105,25 +143,28 @@
 
 .ss-win-btn {
   width: 20px; height: 20px; border-radius: 50%;
-  border: 1px solid rgba(255,255,255,0.1);
-  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--ss-border);
+  background: #ffffff;
   color: var(--ss-text-dim); font-size: 9px; font-weight: 700;
   display: inline-flex; align-items: center; justify-content: center;
   cursor: pointer; transition: all 0.15s; font-family: inherit;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 .ss-win-btn:hover {
   background: var(--ss-primary); border-color: var(--ss-primary);
   color: #fff; transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.35);
 }
 .ss-win-btn.ss-close-btn:hover {
   background: #ef4444; border-color: #ef4444;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
 }
 
 /* ─── Avatar Stage ───────────────────────────────────── */
 .ss-avatar-stage {
   position: relative; z-index: 1;
-  width: 100%; flex: 1; min-height: 320px;
-  display: flex; align-items: center; justify-content: center;
+  width: 100%; flex: 1; min-height: 0; height: 100%;
+  display: flex; align-items: stretch; justify-content: center;
   overflow: hidden;
 }
 
@@ -132,21 +173,27 @@
   position: fixed; bottom: 20px; right: 20px;
   z-index: 999991; display: none; align-items: center; gap: 5px;
   padding: 7px 14px; border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.1);
-  background: rgba(10,12,24,0.8);
+  border: 1px solid var(--ss-border);
+  background: #ffffff;
   backdrop-filter: blur(20px);
-  color: var(--ss-primary); font-size: 11px; font-weight: 700;
+  color: var(--ss-primary); font-size: 11px; font-weight: 800;
   font-family: 'Outfit', -apple-system, sans-serif;
   cursor: pointer;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-  transition: all 0.2s ease;
+  box-shadow:
+    0 12px 32px -4px rgba(45, 30, 20, 0.25),
+    0 4px 14px rgba(79, 70, 229, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 #signstem-isl-pill:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(0,0,0,0.5), 0 0 16px rgba(99,102,241,0.3);
-  border-color: rgba(99,102,241,0.3);
+  box-shadow:
+    0 16px 40px -4px rgba(45, 30, 20, 0.32),
+    0 6px 20px rgba(79, 70, 229, 0.28),
+    0 0 0 1px rgba(255, 255, 255, 0.9) inset;
+  border-color: rgba(79,70,229,0.4);
 }
-.ss-pill-icon { font-size: 13px; filter: drop-shadow(0 0 3px rgba(99,102,241,0.4)); }
+.ss-pill-icon { font-size: 13px; filter: drop-shadow(0 0 4px rgba(79,70,229,0.5)); }
 
 /* ─── Responsive ─────────────────────────────────────── */
 @media (max-width: 480px) {

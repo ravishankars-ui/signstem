@@ -38,7 +38,18 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["index.html", "learn.html", "popup.html", "sidepanel.html", "assets/*", "icons/*", "vendor/*"],
+      "resources": [
+        "index.html",
+        "learn.html",
+        "popup.html",
+        "sidepanel.html",
+        "assets/*",
+        "icons/*",
+        "vendor/*",
+        "zhenja.glb",
+        "Ch33_nonPBR.fbx",
+        "motions/*"
+      ],
       "matches": ["<all_urls>"]
     }
   ]

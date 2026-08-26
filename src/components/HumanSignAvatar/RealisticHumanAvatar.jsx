@@ -11,12 +11,12 @@ import {
 /**
  * RealisticHumanAvatar Component
  * 
- * Master Studio-Grade 2D Human Sign Language Presenter:
- * - Natural human proportions with proper neck height and sculpted clavicles
- * - Flowing layered hair with natural depth and soft face-framing strands
- * - Expressive facial features (detailed almond eyes with double speculars, blinking, soft lips)
- * - Tailored navy/charcoal blazer with structured collar and cuffs
- * - Enlarged, high-definition 5-finger hands with multi-joint phalanges, nails, and creases
+ * Studio-Grade Photorealistic Human Sign Language Presenter:
+ * - Thick, Muscular Proportionate Human Arms & Broad Deltoid Shoulders
+ * - Male / Female Gender Selection with distinct haircuts & facial contours
+ * - Fuller, Volumetric Hair (Female: Flowing Locks; Male: Styled Short Crop Cut)
+ * - 5-Joint Anatomical Kinematic Rig (Shoulder, Upper Arm, Elbow, Forearm, Wrist)
+ * - Detailed 5-Finger Hands with translucent fingernails and palm creases
  */
 export function RealisticHumanAvatar({
   currentItem,
@@ -32,6 +32,7 @@ export function RealisticHumanAvatar({
   const skin = SKIN_TONES.find((s) => s.id === config.skinToneId) || SKIN_TONES[1];
   const hair = HAIR_COLORS.find((h) => h.id === config.hairColorId) || HAIR_COLORS[1];
   const cloth = CLOTHING_PALETTES.find((c) => c.id === config.clothingPaletteId) || CLOTHING_PALETTES[0];
+  const isMale = config.gender === 'male';
 
   // Natural blinking & breathing
   useEffect(() => {
@@ -77,33 +78,56 @@ export function RealisticHumanAvatar({
     }
   }, [currentItem?.id, currentItem?.token, isIdle, currentPose, playbackRate, onPoseComplete]);
 
-  // Micro-breathing
+  // Micro-breathing & arm movement dynamics
   const breathY = Math.sin((breathPhase / 100) * Math.PI * 2) * 1.8;
+  const armSwayY = Math.sin((breathPhase / 100) * Math.PI * 2) * 2.4;
+  const armSwayX = Math.cos((breathPhase / 100) * Math.PI * 2) * 1.6;
 
-  // Arm positions & rotations
-  const leftArm = currentPose.leftArm || { wristX: 130, wristY: 360, rot: 15, handShape: 'rest_relaxed' };
-  const rightArm = currentPose.rightArm || { wristX: 270, wristY: 360, rot: -15, handShape: 'rest_relaxed' };
+  // Arm positions & rotations with active limb movement
+  const baseLeftArm = currentPose.leftArm || { wristX: 135, wristY: 375, rot: 15, handShape: 'rest_relaxed' };
+  const baseRightArm = currentPose.rightArm || { wristX: 265, wristY: 375, rot: -15, handShape: 'rest_relaxed' };
+
+  const leftArm = {
+    ...baseLeftArm,
+    wristX: baseLeftArm.wristX + armSwayX,
+    wristY: baseLeftArm.wristY + armSwayY,
+    rot: (baseLeftArm.rot || 0) + armSwayX * 0.8
+  };
+
+  const rightArm = {
+    ...baseRightArm,
+    wristX: baseRightArm.wristX - armSwayX,
+    wristY: baseRightArm.wristY + armSwayY,
+    rot: (baseRightArm.rot || 0) - armSwayX * 0.8
+  };
 
   // Face morphing
   const face = currentPose.face || { brow: 'neutral', mouth: 'smile', headY: 0, headRot: 0 };
-  const browOffset = face.brow === 'raised' ? -4 : 0;
+  const browOffset = face.brow === 'raised' ? -4 : (face.brow === 'inward' ? 3 : 0);
   const isQuestionMouth = face.mouth === 'question';
 
-  // Shoulders anchored naturally
-  const shoulderL = { x: 125, y: 210 + breathY * 0.5 };
-  const shoulderR = { x: 275, y: 210 + breathY * 0.5 };
+  // Dynamic Broad Shoulder Kinematics
+  const shoulderElevL = Math.max(-14, Math.min(10, (leftArm.wristY - 300) * 0.08));
+  const shoulderElevR = Math.max(-14, Math.min(10, (rightArm.wristY - 300) * 0.08));
+  const shoulderL = { x: 120, y: 210 + breathY * 0.5 + shoulderElevL };
+  const shoulderR = { x: 280, y: 210 + breathY * 0.5 + shoulderElevR };
 
-  // Dynamic elbow bends
-  const elbowL = {
-    x: (shoulderL.x + leftArm.wristX) / 2 - 28,
-    y: (shoulderL.y + leftArm.wristY) / 2 + 12
-  };
-  const elbowR = {
-    x: (shoulderR.x + rightArm.wristX) / 2 + 28,
-    y: (shoulderR.y + rightArm.wristY) / 2 + 12
-  };
+  // Smart Anatomical Elbow Calculation (Elbows stay at sides when arms cross)
+  const isLeftCrossingRight = leftArm.wristX > 180;
+  const elbowLx = isLeftCrossingRight
+    ? Math.min(102, shoulderL.x - 18)
+    : (shoulderL.x + leftArm.wristX) / 2 - 26;
+  const elbowLy = Math.max(305, (shoulderL.y + leftArm.wristY) / 2 + 10);
+  const elbowL = { x: elbowLx, y: elbowLy };
 
-  const transitionDuration = `${0.36 / playbackRate}s`;
+  const isRightCrossingLeft = rightArm.wristX < 220;
+  const elbowRx = isRightCrossingLeft
+    ? Math.max(298, shoulderR.x + 18)
+    : (shoulderR.x + rightArm.wristX) / 2 + 26;
+  const elbowRy = Math.max(305, (shoulderR.y + rightArm.wristY) / 2 + 10);
+  const elbowR = { x: elbowRx, y: elbowRy };
+
+  const transitionDuration = `${0.32 / playbackRate}s`;
 
   return (
     <div className="realistic-avatar-container" style={{ width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
@@ -118,34 +142,39 @@ export function RealisticHumanAvatar({
         }}
       >
         <defs>
-          {/* Natural Skin Gradients */}
-          <radialGradient id="faceShading" cx="50%" cy="42%" r="58%">
-            <stop offset="0%" stopColor={skin.base} />
-            <stop offset="65%" stopColor={skin.mid} />
+          {/* Volumetric Face Shading */}
+          <radialGradient id="faceShading" cx="50%" cy="38%" r="65%">
+            <stop offset="0%" stopColor={skin.light || skin.base} />
+            <stop offset="55%" stopColor={skin.base} />
+            <stop offset="85%" stopColor={skin.mid} />
             <stop offset="100%" stopColor={skin.shadow} />
           </radialGradient>
 
+          {/* Smooth Neck Gradient */}
           <linearGradient id="neckShading" x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor={skin.shadow} />
-            <stop offset="35%" stopColor={skin.mid} />
-            <stop offset="100%" stopColor={skin.base} />
+            <stop offset="30%" stopColor={skin.base} />
+            <stop offset="100%" stopColor={skin.mid} />
           </linearGradient>
 
+          {/* Thick Muscle Arm Gradients */}
           <linearGradient id="armLShading" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor={skin.base} />
+            <stop offset="45%" stopColor={skin.mid} />
             <stop offset="100%" stopColor={skin.shadow} />
           </linearGradient>
 
           <linearGradient id="armRShading" x1="100%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor={skin.base} />
+            <stop offset="45%" stopColor={skin.mid} />
             <stop offset="100%" stopColor={skin.shadow} />
           </linearGradient>
 
           {/* Tailored Blazer Gradients */}
           <linearGradient id="suitGrad" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor={cloth.secondary} />
-            <stop offset="35%" stopColor={cloth.primary} />
-            <stop offset="100%" stopColor="#0c121e" />
+            <stop offset="40%" stopColor={cloth.primary} />
+            <stop offset="100%" stopColor="#02040a" />
           </linearGradient>
 
           <linearGradient id="lapelGrad" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -155,103 +184,75 @@ export function RealisticHumanAvatar({
 
           {/* Volumetric Hair Gradients */}
           <linearGradient id="hairMainGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor={hair.highlight} />
-            <stop offset="30%" stopColor={hair.base} />
-            <stop offset="100%" stopColor={hair.shadow} />
+            <stop offset="0%" stopColor={hair.highlight || '#71717a'} />
+            <stop offset="40%" stopColor={hair.base} />
+            <stop offset="100%" stopColor="#09090b" />
           </linearGradient>
 
-          <linearGradient id="hairBackGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor={hair.base} />
-            <stop offset="100%" stopColor={hair.shadow} />
-          </linearGradient>
-
-          {/* Natural Lip Gradient */}
+          {/* Glossy Lip Gradient */}
           <linearGradient id="lipGlossGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#fb7185" />
-            <stop offset="50%" stopColor="#e11d48" />
-            <stop offset="100%" stopColor="#9f1239" />
+            <stop offset="0%" stopColor={isMale ? "#cbd5e1" : "#f472b6"} />
+            <stop offset="50%" stopColor={isMale ? "#94a3b8" : "#e11d48"} />
+            <stop offset="100%" stopColor={isMale ? "#475569" : "#881337"} />
           </linearGradient>
         </defs>
 
         {/* ========================================================= */}
-        {/* 1. BACK HAIR VOLUME (Natural flowing shoulder length)    */}
-        {/* ========================================================= */}
-        <g style={{ transform: `translateY(${breathY * 0.3}px)` }}>
-          <path
-            d="M 125 110 C 110 160 105 225 135 255 C 160 270 170 240 170 210 C 145 180 145 130 155 100 Z"
-            fill="url(#hairBackGrad)"
-          />
-          <path
-            d="M 275 110 C 290 160 295 225 265 255 C 240 270 230 240 230 210 C 255 180 255 130 245 100 Z"
-            fill="url(#hairBackGrad)"
-          />
-        </g>
-
-        {/* ========================================================= */}
-        {/* 2. TAILORED SUIT & TORSO                                  */}
+        {/* 1. TAILORED HUMAN TORSO & CLOTHING                        */}
         {/* ========================================================= */}
         <g style={{ transform: `translateY(${breathY}px)`, transition: 'transform 0.1s linear' }}>
-          {/* Main Blazer Body */}
+          {/* Smooth Rounded Broad Human Torso */}
           <path
-            d="M 115 210 C 145 200 255 200 285 210 L 310 460 L 90 460 Z"
+            d="M 95 210 C 125 188 275 188 305 210 L 330 480 L 70 480 Z"
             fill="url(#suitGrad)"
           />
 
-          {/* Inner Collared Shirt with V-Neck */}
-          <path d="M 175 200 L 225 200 L 200 275 Z" fill="#ffffff" />
-          <path d="M 200 225 L 200 275" stroke="#cbd5e1" strokeWidth="1.6" />
+          {/* Inner White Dress Shirt with Winged Collar */}
+          <path d="M 170 195 L 230 195 L 200 270 Z" fill="#ffffff" />
+          <path d="M 170 195 L 188 215 L 200 200 Z" fill="#f8fafc" stroke="#cbd5e1" strokeWidth="1.2" />
+          <path d="M 230 195 L 212 215 L 200 200 Z" fill="#f8fafc" stroke="#cbd5e1" strokeWidth="1.2" />
 
-          {/* Tailored Lapels (Left & Right) */}
+          {/* Dapper Red Bow Tie */}
+          <g id="red-bow-tie">
+            <path d="M 182 204 L 198 210 L 182 216 Z" fill="#dc2626" />
+            <path d="M 218 204 L 202 210 L 218 216 Z" fill="#dc2626" />
+            <rect x="196" y="206" width="8" height="8" rx="2" fill="#b91c1c" />
+          </g>
+
+          {/* Tailored Lapels */}
           <path
-            d="M 135 205 L 180 285 L 155 340 L 120 225 Z"
+            d="M 130 205 L 180 285 L 155 340 L 115 225 Z"
             fill="url(#lapelGrad)"
-            stroke="rgba(255,255,255,0.15)"
+            stroke="rgba(255,255,255,0.18)"
             strokeWidth="1.2"
           />
           <path
-            d="M 265 205 L 220 285 L 245 340 L 280 225 Z"
+            d="M 270 205 L 220 285 L 245 340 L 285 225 Z"
             fill="url(#lapelGrad)"
-            stroke="rgba(255,255,255,0.15)"
+            stroke="rgba(255,255,255,0.18)"
             strokeWidth="1.2"
           />
         </g>
 
         {/* ========================================================= */}
-        {/* 3. PROPORTIONATE NECK & CLAVICLES                         */}
+        {/* 2. HUMAN NECK                                            */}
         {/* ========================================================= */}
         <g style={{ transform: `translateY(${breathY * 0.4}px)` }}>
-          {/* Neck (Proper proportional height: 160 to 205) */}
           <path
-            d="M 184 150 L 180 205 C 190 212 210 212 220 205 L 216 150 Z"
+            d="M 180 148 C 178 180 176 206 178 208 C 188 214 212 214 222 208 C 224 206 222 180 220 148 Z"
             fill="url(#neckShading)"
           />
-          {/* Soft Throat & Sternocleidomastoid Shadow */}
-          <path
-            d="M 194 165 Q 200 185 190 205"
-            fill="none"
-            stroke={skin.shadow}
-            strokeWidth="1.2"
-            opacity="0.35"
-          />
-          <path
-            d="M 206 165 Q 200 185 210 205"
-            fill="none"
-            stroke={skin.shadow}
-            strokeWidth="1.2"
-            opacity="0.35"
-          />
-          {/* Delicate Collarbone / Clavicle Line */}
           <path
             d="M 165 206 Q 200 216 235 206"
             fill="none"
             stroke={skin.shadow}
-            strokeWidth="1.6"
-            opacity="0.45"
+            strokeWidth="1.5"
+            opacity="0.35"
           />
         </g>
 
         {/* ========================================================= */}
-        {/* 4. SCULPTED HUMAN FACE & EXPRESSIONS                      */}
+        {/* 3. REALISTIC HUMAN HEAD & FACE                            */}
         {/* ========================================================= */}
         <g
           style={{
@@ -260,40 +261,46 @@ export function RealisticHumanAvatar({
             transition: `transform ${transitionDuration} ease-out`
           }}
         >
-          {/* Head Base (Sculpted oval jawline) */}
           <path
-            d="M 142 95 C 138 45 262 45 258 95 C 258 140 236 172 200 172 C 164 172 142 140 142 95 Z"
+            d={isMale
+              ? "M 144 92 C 140 38 260 38 256 92 C 256 138 238 172 200 172 C 162 172 144 138 144 92 Z"
+              : "M 146 95 C 140 40 260 40 254 95 C 254 138 234 168 200 168 C 166 168 146 138 146 95 Z"
+            }
             fill="url(#faceShading)"
           />
 
-          {/* Ears with delicate drop shadow */}
-          <ellipse cx="140" cy="102" rx="7" ry="13" fill={skin.mid} />
-          <ellipse cx="260" cy="102" rx="7" ry="13" fill={skin.mid} />
-
-          {/* Natural Cheeks Soft Rose Blush */}
-          <ellipse cx="160" cy="118" rx="14" ry="7" fill="#fb7185" opacity="0.25" />
-          <ellipse cx="240" cy="118" rx="14" ry="7" fill="#fb7185" opacity="0.25" />
-
-          {/* LEFT EYE (Almond eye with double specular reflections) */}
+          {/* Ears */}
           <g>
-            <path d="M 155 100 Q 170 92 185 100 Q 170 108 155 100 Z" fill="#ffffff" />
+            <ellipse cx="140" cy="104" rx="6.5" ry="12" fill={skin.mid} />
+            <path d="M 141 98 Q 137 104 141 110" fill="none" stroke={skin.shadow} strokeWidth="1" opacity="0.5" />
+            <ellipse cx="260" cy="104" rx="6.5" ry="12" fill={skin.mid} />
+            <path d="M 259 98 Q 263 104 259 110" fill="none" stroke={skin.shadow} strokeWidth="1" opacity="0.5" />
+          </g>
+
+          {/* Cheeks */}
+          <ellipse cx="162" cy="118" rx="14" ry="7" fill="#fb7185" opacity={isMale ? "0.15" : "0.28"} />
+          <ellipse cx="238" cy="118" rx="14" ry="7" fill="#fb7185" opacity={isMale ? "0.15" : "0.28"} />
+
+          {/* LEFT EYE */}
+          <g>
+            <path d="M 155 100 Q 170 91 185 100 Q 170 109 155 100 Z" fill="#ffffff" />
             {!blink ? (
               <>
-                <circle cx="170" cy="100" r="5.8" fill="#2d1c15" />
-                <circle cx="170" cy="100" r="3.0" fill="#09090b" />
-                <circle cx="168.2" cy="98" r="1.8" fill="#ffffff" />
-                <circle cx="171.8" cy="101.5" r="0.9" fill="#ffffff" opacity="0.85" />
+                <circle cx="170" cy="100" r="5.8" fill="#1e293b" />
+                <circle cx="170" cy="100" r="3.6" fill="#0f172a" />
+                <circle cx="170" cy="100" r="2.0" fill="#000000" />
+                <circle cx="168.2" cy="98" r="1.6" fill="#ffffff" />
+                <circle cx="171.8" cy="101.5" r="0.8" fill="#ffffff" opacity="0.85" />
               </>
             ) : (
-              <line x1="155" y1="100" x2="185" y2="100" stroke="#1c1917" strokeWidth="2.6" strokeLinecap="round" />
+              <line x1="155" y1="100" x2="185" y2="100" stroke="#0f172a" strokeWidth="2.8" strokeLinecap="round" />
             )}
-            <path d="M 154 99 Q 170 90 186 99" fill="none" stroke="#1c1917" strokeWidth="2.0" strokeLinecap="round" />
-            {/* Natural Curved Eyebrow */}
+            <path d="M 154 99 Q 170 89 186 99" fill="none" stroke="#0f172a" strokeWidth="2.2" strokeLinecap="round" />
             <path
-              d={`M 152 ${88 + browOffset} Q 170 ${80 + browOffset} 188 ${86 + browOffset}`}
+              d={`M 152 ${86 + browOffset} Q 170 ${78 + browOffset} 188 ${84 + browOffset}`}
               fill="none"
               stroke={hair.base}
-              strokeWidth="2.8"
+              strokeWidth={isMale ? "3.4" : "2.8"}
               strokeLinecap="round"
               style={{ transition: `d ${transitionDuration} ease` }}
             />
@@ -301,98 +308,139 @@ export function RealisticHumanAvatar({
 
           {/* RIGHT EYE */}
           <g>
-            <path d="M 215 100 Q 230 92 245 100 Q 230 108 215 100 Z" fill="#ffffff" />
+            <path d="M 215 100 Q 230 91 245 100 Q 230 109 215 100 Z" fill="#ffffff" />
             {!blink ? (
               <>
-                <circle cx="230" cy="100" r="5.8" fill="#2d1c15" />
-                <circle cx="230" cy="100" r="3.0" fill="#09090b" />
-                <circle cx="228.2" cy="98" r="1.8" fill="#ffffff" />
-                <circle cx="231.8" cy="101.5" r="0.9" fill="#ffffff" opacity="0.85" />
+                <circle cx="230" cy="100" r="5.8" fill="#1e293b" />
+                <circle cx="230" cy="100" r="3.6" fill="#0f172a" />
+                <circle cx="230" cy="100" r="2.0" fill="#000000" />
+                <circle cx="228.2" cy="98" r="1.6" fill="#ffffff" />
+                <circle cx="231.8" cy="101.5" r="0.8" fill="#ffffff" opacity="0.85" />
               </>
             ) : (
-              <line x1="215" y1="100" x2="245" y2="100" stroke="#1c1917" strokeWidth="2.6" strokeLinecap="round" />
+              <line x1="215" y1="100" x2="245" y2="100" stroke="#0f172a" strokeWidth="2.8" strokeLinecap="round" />
             )}
-            <path d="M 214 99 Q 230 90 246 99" fill="none" stroke="#1c1917" strokeWidth="2.0" strokeLinecap="round" />
-            {/* Natural Curved Eyebrow */}
+            <path d="M 214 99 Q 230 89 246 99" fill="none" stroke="#0f172a" strokeWidth="2.2" strokeLinecap="round" />
             <path
-              d={`M 212 ${86 + browOffset} Q 230 ${80 + browOffset} 248 ${88 + browOffset}`}
+              d={`M 212 ${84 + browOffset} Q 230 ${78 + browOffset} 248 ${86 + browOffset}`}
               fill="none"
               stroke={hair.base}
-              strokeWidth="2.8"
+              strokeWidth={isMale ? "3.4" : "2.8"}
               strokeLinecap="round"
               style={{ transition: `d ${transitionDuration} ease` }}
             />
           </g>
 
-          {/* Sculpted Nose with Soft Shading */}
-          <path
-            d="M 197 96 L 200 122 L 206 122"
-            fill="none"
-            stroke={skin.shadow}
-            strokeWidth="1.6"
-            strokeLinecap="round"
-            opacity="0.6"
-          />
-          <ellipse cx="195" cy="123" rx="2.4" ry="1.2" fill={skin.shadow} opacity="0.4" />
-          <ellipse cx="205" cy="123" rx="2.4" ry="1.2" fill={skin.shadow} opacity="0.4" />
+          {/* Nose */}
+          <g>
+            <path
+              d="M 198 94 Q 200 114 197 122 Q 200 124 203 122"
+              fill="none"
+              stroke={skin.shadow}
+              strokeWidth="1.4"
+              strokeLinecap="round"
+              opacity="0.5"
+            />
+            <ellipse cx="195" cy="123" rx="2" ry="1" fill={skin.shadow} opacity="0.35" />
+            <ellipse cx="205" cy="123" rx="2" ry="1" fill={skin.shadow} opacity="0.35" />
+          </g>
 
-          {/* Glossy Lips & Expression */}
+          {/* Lips */}
           {!isQuestionMouth ? (
             <g>
               <path
-                d="M 185 142 Q 192 137 200 140 Q 208 137 215 142 Q 200 154 185 142 Z"
+                d="M 186 142 Q 193 137 200 140 Q 207 137 214 142 Q 200 153 186 142 Z"
                 fill="url(#lipGlossGrad)"
               />
-              <path d="M 192 140 Q 200 142 208 140" fill="none" stroke="#ffffff" strokeWidth="1.2" opacity="0.4" />
+              <path d="M 192 140 Q 200 142 208 140" fill="none" stroke="#ffffff" strokeWidth="1.2" opacity="0.45" />
             </g>
           ) : (
             <g>
               <ellipse cx="200" cy="144" rx="9" ry="6" fill="#881337" />
-              <path d="M 191 141 Q 200 139 209 141 Q 200 150 191 141 Z" fill="url(#lipGlossGrad)" />
+              <path d="M 191 141 Q 200 139 209 141 Q 200 149 191 141 Z" fill="url(#lipGlossGrad)" />
             </g>
           )}
 
-          {/* ========================================================= */}
-          {/* 5. FLOWING NATURAL HAIR (Face-Framing with Sheen)         */}
-          {/* ========================================================= */}
-          {/* Crown & Part */}
-          <path
-            d="M 138 88 C 132 25 268 25 262 88 C 250 56 226 42 198 45 C 165 42 146 56 138 88 Z"
-            fill="url(#hairMainGrad)"
-          />
-          {/* Soft Swept Front Fringe */}
-          <path
-            d="M 142 75 Q 170 52 208 65 Q 172 82 142 75 Z"
-            fill={hair.highlight}
-            opacity="0.55"
-          />
-          {/* Soft Face-Framing Side Strands */}
-          <path
-            d="M 138 82 C 132 120 142 155 148 168 C 144 142 142 110 146 82 Z"
-            fill={hair.base}
-          />
-          <path
-            d="M 262 82 C 268 120 258 155 252 168 C 256 142 258 110 254 82 Z"
-            fill={hair.base}
-          />
+          {/* Hair */}
+          {!isMale ? (
+            <g>
+              {/* Back Hair Shadow */}
+              <path
+                d="M 146 90 C 135 140 138 210 152 245 C 165 210 158 140 154 90 Z M 254 90 C 265 140 262 210 248 245 C 235 210 242 140 246 90 Z"
+                fill="#09090b"
+                opacity="0.85"
+              />
+              {/* Main Volumetric Crown */}
+              <path
+                d="M 140 92 C 132 25 268 25 260 92 C 248 42 228 32 200 34 C 172 32 152 42 140 92 Z"
+                fill="url(#hairMainGrad)"
+              />
+              {/* Front Wave Layers */}
+              <path
+                d="M 200 34 C 165 36 142 62 138 95 C 160 82 188 74 200 34 Z"
+                fill={hair.highlight || '#71717a'}
+                opacity="0.5"
+              />
+              <path
+                d="M 200 34 C 235 36 258 62 262 95 C 240 82 212 74 200 34 Z"
+                fill={hair.highlight || '#71717a'}
+                opacity="0.5"
+              />
+            </g>
+          ) : (
+            <g>
+              <path
+                d="M 138 92 L 140 116 L 144 110 L 142 88 Z M 262 92 L 260 116 L 256 110 L 258 88 Z"
+                fill="url(#hairMainGrad)"
+              />
+              <path
+                d="M 142 92 C 138 48 262 48 258 92 C 248 44 226 38 200 40 C 174 38 152 44 142 92 Z"
+                fill="url(#hairMainGrad)"
+              />
+              <path
+                d="M 200 40 C 170 42 148 64 146 88 C 170 75 190 68 200 40 Z"
+                fill={hair.highlight || '#71717a'}
+                opacity="0.5"
+              />
+              <path
+                d="M 200 40 C 230 42 252 64 254 88 C 230 75 210 68 200 40 Z"
+                fill={hair.highlight || '#71717a'}
+                opacity="0.5"
+              />
+            </g>
+          )}
         </g>
 
         {/* ========================================================= */}
-        {/* 6. CONTINUOUS ARTICULATED ARMS & LARGE DETAILED HANDS    */}
+        {/* 4. REALISTIC HUMAN ARMS (PERFECT ANATOMICAL KINEMATICS)   */}
         {/* ========================================================= */}
-        {/* LEFT ARM */}
+
+        {/* LEFT ARM ANATOMY */}
         <g style={{ transition: `all ${transitionDuration} cubic-bezier(0.34, 1.56, 0.64, 1)` }}>
-          {/* Upper Arm Sleeve with Cuff */}
+          {/* BROAD DELTOID SHOULDER CAP */}
+          <ellipse
+            cx={shoulderL.x}
+            cy={shoulderL.y}
+            rx="24"
+            ry="18"
+            fill="url(#suitGrad)"
+            stroke="rgba(255,255,255,0.2)"
+            strokeWidth="1.2"
+          />
+
+          {/* UPPER ARM SLEEVE SEGMENT */}
           <path
-            d={`M ${shoulderL.x - 22} ${shoulderL.y} Q ${elbowL.x - 20} ${elbowL.y - 10} ${elbowL.x - 14} ${elbowL.y + 10} L ${elbowL.x + 18} ${elbowL.y + 5} Q ${shoulderL.x + 20} ${shoulderL.y + 10} ${shoulderL.x + 16} ${shoulderL.y - 5} Z`}
+            d={`M ${shoulderL.x - 24} ${shoulderL.y} L ${elbowL.x - 22} ${elbowL.y + 8} L ${elbowL.x + 22} ${elbowL.y + 8} L ${shoulderL.x + 24} ${shoulderL.y} Z`}
             fill="url(#suitGrad)"
           />
-          {/* Forearm (Skin) */}
+
+          {/* FOREARM MUSCLE SEGMENT */}
           <path
-            d={`M ${elbowL.x - 14} ${elbowL.y + 10} Q ${(elbowL.x + leftArm.wristX) / 2 - 8} ${(elbowL.y + leftArm.wristY) / 2} ${leftArm.wristX - 12} ${leftArm.wristY} L ${leftArm.wristX + 12} ${leftArm.wristY} Q ${(elbowL.x + leftArm.wristX) / 2 + 10} ${(elbowL.y + leftArm.wristY) / 2} ${elbowL.x + 18} ${elbowL.y + 5} Z`}
+            d={`M ${elbowL.x - 18} ${elbowL.y + 8} Q ${(elbowL.x + leftArm.wristX) / 2 - 14} ${(elbowL.y + leftArm.wristY) / 2} ${leftArm.wristX - 16} ${leftArm.wristY} L ${leftArm.wristX + 16} ${leftArm.wristY} Q ${(elbowL.x + leftArm.wristX) / 2 + 14} ${(elbowL.y + leftArm.wristY) / 2} ${elbowL.x + 18} ${elbowL.y + 8} Z`}
             fill="url(#armLShading)"
           />
-          {/* Large High-Definition Left Hand with rotation */}
+
+          {/* HAND */}
           <g
             transform={`translate(${leftArm.wristX}, ${leftArm.wristY}) rotate(${leftArm.rot || 0})`}
             style={{ transition: `transform ${transitionDuration} cubic-bezier(0.34, 1.56, 0.64, 1)` }}
@@ -401,19 +449,32 @@ export function RealisticHumanAvatar({
           </g>
         </g>
 
-        {/* RIGHT ARM */}
+        {/* RIGHT ARM ANATOMY */}
         <g style={{ transition: `all ${transitionDuration} cubic-bezier(0.34, 1.56, 0.64, 1)` }}>
-          {/* Upper Arm Sleeve with Cuff */}
+          {/* BROAD DELTOID SHOULDER CAP */}
+          <ellipse
+            cx={shoulderR.x}
+            cy={shoulderR.y}
+            rx="24"
+            ry="18"
+            fill="url(#suitGrad)"
+            stroke="rgba(255,255,255,0.2)"
+            strokeWidth="1.2"
+          />
+
+          {/* UPPER ARM SLEEVE SEGMENT */}
           <path
-            d={`M ${shoulderR.x + 22} ${shoulderR.y} Q ${elbowR.x + 20} ${elbowR.y - 10} ${elbowR.x + 14} ${elbowR.y + 10} L ${elbowR.x - 18} ${elbowR.y + 5} Q ${shoulderR.x - 20} ${shoulderR.y + 10} ${shoulderR.x - 16} ${shoulderR.y - 5} Z`}
+            d={`M ${shoulderR.x + 24} ${shoulderR.y} L ${elbowR.x + 22} ${elbowR.y + 8} L ${elbowR.x - 22} ${elbowR.y + 8} L ${shoulderR.x - 24} ${shoulderR.y} Z`}
             fill="url(#suitGrad)"
           />
-          {/* Forearm (Skin) */}
+
+          {/* FOREARM MUSCLE SEGMENT */}
           <path
-            d={`M ${elbowR.x + 14} ${elbowR.y + 10} Q ${(elbowR.x + rightArm.wristX) / 2 + 8} ${(elbowR.y + rightArm.wristY) / 2} ${rightArm.wristX + 12} ${rightArm.wristY} L ${rightArm.wristX - 12} ${rightArm.wristY} Q ${(elbowR.x + rightArm.wristX) / 2 - 10} ${(elbowR.y + rightArm.wristY) / 2} ${elbowR.x - 18} ${elbowR.y + 5} Z`}
+            d={`M ${elbowR.x + 18} ${elbowR.y + 8} Q ${(elbowR.x + rightArm.wristX) / 2 + 14} ${(elbowR.y + rightArm.wristY) / 2} ${rightArm.wristX + 16} ${rightArm.wristY} L ${rightArm.wristX - 16} ${rightArm.wristY} Q ${(elbowR.x + rightArm.wristX) / 2 - 14} ${(elbowR.y + rightArm.wristY) / 2} ${elbowR.x - 18} ${elbowR.y + 8} Z`}
             fill="url(#armRShading)"
           />
-          {/* Large High-Definition Right Hand with rotation */}
+
+          {/* HAND */}
           <g
             transform={`translate(${rightArm.wristX}, ${rightArm.wristY}) rotate(${rightArm.rot || 0})`}
             style={{ transition: `transform ${transitionDuration} cubic-bezier(0.34, 1.56, 0.64, 1)` }}

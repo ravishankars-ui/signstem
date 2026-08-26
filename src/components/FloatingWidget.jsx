@@ -193,7 +193,7 @@ export function FloatingWidget({ children, footer, headerActions }) {
       <div className="widget-header-dragbar" onMouseDown={handleDragStart} onTouchStart={handleDragStart}>
         <div className="drag-handle-indicator">
           <span className="drag-dots">⋮⋮</span>
-          <span className="widget-title">ISL 2D Avatar</span>
+          <span className="widget-title">3D SignSTEM Avatar</span>
         </div>
 
         {/* Quick Size Presets & Controls */}

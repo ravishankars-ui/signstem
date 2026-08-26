@@ -17,9 +17,22 @@ try {
     configFile: resolve(root, 'vite.config.js'),
   });
 
+  function safeCopyFile(src, dest) {
+    try {
+      fs.copyFileSync(src, dest);
+    } catch (e) {
+      try {
+        const content = fs.readFileSync(src);
+        fs.writeFileSync(dest, content);
+      } catch (err) {
+        console.warn(`Warning copying ${src} to ${dest}:`, err.message);
+      }
+    }
+  }
+
   // Explicitly sync content script, CSS & vendor libraries to dist
-  fs.copyFileSync(resolve(root, 'public/content.js'), resolve(root, 'dist/content.js'));
-  fs.copyFileSync(resolve(root, 'public/content.css'), resolve(root, 'dist/content.css'));
+  safeCopyFile(resolve(root, 'public/content.js'), resolve(root, 'dist/content.js'));
+  safeCopyFile(resolve(root, 'public/content.css'), resolve(root, 'dist/content.css'));
   if (fs.existsSync(resolve(root, 'public/vendor'))) {
     fs.cpSync(resolve(root, 'public/vendor'), resolve(root, 'dist/vendor'), { recursive: true });
   }

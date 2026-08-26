@@ -14,27 +14,27 @@ export function SubtitleBar({ currentItem, queue = [], isIdle }) {
   const meta = poseData?.metadata;
 
   return (
-    <div style={S.wrap}>
+    <div className="subtitle-bar-wrapper" style={S.wrap}>
       {/* Main bar */}
       <div style={S.bar}>
         {/* Status */}
         <div style={S.status}>
-          <div style={{ ...S.dot, background: isIdle ? '#475569' : '#22c55e', boxShadow: isIdle ? 'none' : '0 0 6px rgba(34,197,94,0.5)' }} />
+          <div style={{ ...S.dot, background: isIdle ? '#94a3b8' : '#10b981', boxShadow: isIdle ? 'none' : '0 0 8px rgba(16,185,129,0.6)' }} />
           <span style={S.statusLabel}>{isIdle ? 'Ready' : 'Signing'}</span>
         </div>
 
         {/* Content */}
         <div style={S.content}>
           {isIdle ? (
-            <span style={S.idle}>Waiting for input...</span>
+            <span style={S.idle}>Waiting for input or speech...</span>
           ) : isFingerspelling ? (
             <div style={S.finger}>
               <div style={S.letters}>
                 {wordRef.split('').map((ch, i) => (
                   <span key={i} style={{
                     ...S.letter,
-                    color: i === letterIndex ? '#a5b4fc' : i < letterIndex ? '#475569' : '#e2e8f0',
-                    fontWeight: i === letterIndex ? 800 : 500,
+                    color: i === letterIndex ? '#4f46e5' : i < letterIndex ? '#8c827a' : 'inherit',
+                    fontWeight: i === letterIndex ? 900 : 600,
                   }}>{ch}</span>
                 ))}
               </div>
@@ -54,9 +54,9 @@ export function SubtitleBar({ currentItem, queue = [], isIdle }) {
       {/* Sign details */}
       {!isIdle && meta && (
         <div style={S.details}>
-          <span style={{ color: '#a5b4fc', fontWeight: 600 }}>{meta.handshapeName}</span>
-          <span style={{ color: '#475569' }}>·</span>
-          <span style={{ color: '#94a3b8' }}>{meta.desc}</span>
+          <span style={{ color: '#4f46e5', fontWeight: 700 }}>{meta.handshapeName}</span>
+          <span style={{ opacity: 0.5 }}>·</span>
+          <span style={{ opacity: 0.85 }}>{meta.desc}</span>
         </div>
       )}
     </div>
@@ -66,31 +66,45 @@ export function SubtitleBar({ currentItem, queue = [], isIdle }) {
 const S = {
   wrap: { flexShrink: 0 },
   bar: {
-    display: 'flex', alignItems: 'center', gap: 8,
-    padding: '6px 10px',
-    background: 'rgba(0,0,0,0.25)',
-    borderTop: '1px solid rgba(255,255,255,0.04)',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    padding: '8px 12px',
+    background: 'var(--bg-surface-glass)',
+    borderTop: '1px solid var(--border-color)',
+    backdropFilter: 'blur(16px)',
+    boxShadow: '0 -2px 12px rgba(45, 30, 20, 0.04)',
   },
-  status: { display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 },
-  dot: { width: 5, height: 5, borderRadius: '50%', transition: 'all 0.3s' },
-  statusLabel: { fontSize: '9px', color: '#64748b', fontWeight: 600 },
+  status: { display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 },
+  dot: { width: 6, height: 6, borderRadius: '50%', transition: 'all 0.3s' },
+  statusLabel: { fontSize: '9px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' },
   content: { flex: 1, minWidth: 0, textAlign: 'center' },
-  idle: { fontSize: '10px', color: '#475569', fontStyle: 'italic' },
-  word: { fontSize: '13px', fontWeight: 700, color: '#f1f5f9', letterSpacing: '0.3px' },
+  idle: { fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic' },
+  word: { fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '0.4px', textShadow: '0 1px 2px rgba(0,0,0,0.05)' },
   finger: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 },
   letters: { display: 'flex', gap: 1 },
   letter: { fontSize: '12px', transition: 'all 0.15s', fontFamily: "'JetBrains Mono', monospace" },
-  counter: { fontSize: '8px', color: '#475569' },
+  counter: { fontSize: '9px', color: 'var(--text-muted)', fontWeight: 700 },
   badge: {
-    padding: '1px 6px', borderRadius: 6,
-    background: 'rgba(99,102,241,0.15)', color: '#a5b4fc',
-    fontSize: '8px', fontWeight: 700, flexShrink: 0,
+    padding: '2px 7px',
+    borderRadius: 7,
+    background: 'rgba(99,102,241,0.15)',
+    color: 'var(--accent-primary)',
+    fontSize: '9px',
+    fontWeight: 800,
+    flexShrink: 0,
+    boxShadow: '0 1px 4px rgba(79, 70, 229, 0.15)',
   },
   details: {
-    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-    padding: '3px 10px',
-    background: 'rgba(0,0,0,0.15)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    padding: '3px 12px',
+    background: 'var(--bg-surface-raised)',
     fontSize: '9px',
+    color: 'var(--text-secondary)',
+    boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.02)',
   },
 };
 

@@ -1,33 +1,376 @@
-import { useEffect, useState } from 'react'
-import { createRoot } from 'react-dom/client'
-import './styles.css'
+import React, { useEffect, useState } from 'react';
+import { createRoot } from 'react-dom/client';
+import './index.css';
+import { EXTENSION_THEMES } from './constants/avatarCustomization';
+import { ZhenjaSignAvatar } from './components/ZhenjaSignAvatar';
 
-const extensionApi = globalThis.chrome?.storage ? globalThis.chrome : null
+const extensionApi = globalThis.chrome?.storage ? globalThis.chrome : null;
 
-const subjects = [
-  ['Physics', '⚛', 'Motion & energy', 'bg-lilac'],
-  ['Mathematics', '∑', 'Numbers & patterns', 'bg-[#ffe0b6]'],
-  ['Chemistry', '⚗', 'Matter & reactions', 'bg-[#cceee6]'],
-]
+const STEM_SUBJECTS = [
+  { id: 'Physics', name: 'Physics', icon: '⚛', desc: 'Motion, Force & Energy', color: 'from-blue-500/20 to-indigo-500/20 border-blue-500/30 text-blue-400' },
+  { id: 'Mathematics', name: 'Mathematics', icon: '∑', desc: 'Numbers, Geometry & Algebra', color: 'from-amber-500/20 to-orange-500/20 border-amber-500/30 text-amber-400' },
+  { id: 'Chemistry', name: 'Chemistry', icon: '⚗', desc: 'Atoms, Reactions & Matter', color: 'from-teal-500/20 to-emerald-500/20 border-teal-500/30 text-teal-400' },
+  { id: 'Biology', name: 'Biology', icon: '🧬', desc: 'Cells, Genetics & Anatomy', color: 'from-rose-500/20 to-pink-500/20 border-rose-500/30 text-rose-400' },
+  { id: 'CS', name: 'Computer Sci', icon: '💻', desc: 'Algorithms, Code & Data', color: 'from-purple-500/20 to-violet-500/20 border-purple-500/30 text-purple-400' },
+];
 
-function App() {
-  const [settings, setSettings] = useState({ helperEnabled: true, activeSubject: 'Physics' })
-  const [notice, setNotice] = useState('')
-  useEffect(() => { extensionApi?.storage.sync.get(settings, saved => setSettings({ ...settings, ...saved })) }, [])
+const POPULAR_SIGNS = ['NAMASTE', 'GRAVITY', 'ATOM', 'EQUAL', 'ENERGY', 'HELLO', 'HELP', 'CODE'];
+
+function PopupApp() {
+  const [settings, setSettings] = useState({
+    helperEnabled: true,
+    activeSubject: 'Physics',
+    themeId: 'ivory-pearl',
+    themeMode: 'light' // Default to Ivory White
+  });
+  const [activeSign, setActiveSign] = useState('HELLO');
+  const [inputText, setInputText] = useState('');
+  const [notice, setNotice] = useState('');
+
+  const isLightMode = settings.themeMode === 'light' || settings.themeMode === 'ivory';
+
+  useEffect(() => {
+    if (extensionApi?.storage?.sync) {
+      extensionApi.storage.sync.get({ helperEnabled: true, activeSubject: 'Physics', themeId: 'ivory-pearl', themeMode: 'light' }, (saved) => {
+        if (saved) setSettings((prev) => ({ ...prev, ...saved }));
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    const rootEl = document.documentElement;
+    const bodyEl = document.body;
+    if (isLightMode) {
+      rootEl.classList.add('theme-light', 'theme-ivory');
+      bodyEl.classList.add('theme-light', 'theme-ivory');
+    } else {
+      rootEl.classList.remove('theme-light', 'theme-ivory');
+      bodyEl.classList.remove('theme-light', 'theme-ivory');
+    }
+  }, [isLightMode]);
+
   const toggleHelper = () => {
-    const next = !settings.helperEnabled
-    setSettings({ ...settings, helperEnabled: next })
-    extensionApi?.storage.sync.set({ helperEnabled: next })
-    setNotice(next ? 'Page helper enabled. Refresh any open pages to apply.' : 'Page helper disabled.')
-  }
-  const openStudio = () => extensionApi?.tabs ? extensionApi.tabs.create({ url: extensionApi.runtime.getURL('learn.html') }) : window.open('/learn.html', '_blank')
-  return <main className="min-h-[560px] w-[390px] overflow-hidden bg-mist p-5">
-    <header className="flex items-center justify-between fade-up"><div className="flex items-center gap-2"><div className="grid h-9 w-9 place-items-center rounded-xl bg-ink text-lg text-mint">✦</div><div><h1 className="m-0 text-base font-black tracking-[-.05em]">SignSTEM</h1><p className="m-0 text-[11px] text-slate-500">Learn. Sign. Understand.</p></div></div><button onClick={toggleHelper} className={'rounded-full px-3 py-1.5 text-[11px] font-bold transition ' + (settings.helperEnabled ? 'bg-[#d7f5ec] text-teal' : 'bg-slate-200 text-slate-500')}>{settings.helperEnabled ? 'Helper on' : 'Helper off'}</button></header>
-    <section className="relative mt-5 overflow-hidden rounded-[22px] bg-ink p-5 text-white fade-up" style={{animationDelay:'80ms'}}>
-      <div className="absolute -right-5 -top-6 h-32 w-32 rounded-full bg-mint/20 blur-2xl"/><p className="relative m-0 text-[10px] font-bold tracking-[.16em] text-mint uppercase">Your study companion</p><h2 className="relative mb-2 mt-2 max-w-[230px] text-[25px] font-black leading-[1.05] tracking-[-.07em]">STEM speaks every language.</h2><p className="relative m-0 max-w-[220px] text-xs leading-relaxed text-slate-300">Explore concepts your way, with Indian Sign Language at the center.</p><div className="breathe absolute bottom-3 right-4 grid h-20 w-20 place-items-center rounded-[28px] border border-white/15 bg-white/10 text-3xl backdrop-blur">🤟</div><button onClick={openStudio} className="relative mt-5 rounded-xl bg-mint px-4 py-2.5 text-xs font-extrabold text-ink transition hover:scale-[1.02]">Open learning studio →</button></section>
-    <section className="mt-5 fade-up" style={{animationDelay:'140ms'}}><div className="mb-2 flex items-center justify-between"><h2 className="m-0 text-sm font-extrabold tracking-[-.04em]">Continue learning</h2><button onClick={openStudio} className="border-0 bg-transparent text-[11px] font-bold text-teal">View all</button></div><div className="grid grid-cols-3 gap-2">{subjects.map(([name, icon, desc, color]) => <button key={name} onClick={() => { setSettings({...settings, activeSubject:name}); extensionApi?.storage.sync.set({activeSubject:name}); openStudio() }} className="rounded-2xl border border-slate-200/60 bg-white p-3 text-left shadow-sm transition hover:-translate-y-0.5"><div className={'grid h-9 w-9 place-items-center rounded-xl text-lg '+color}>{icon}</div><strong className="mt-2 block text-[11px]">{name}</strong><span className="mt-0.5 block text-[9px] leading-tight text-slate-500">{desc}</span></button>)}</div></section>
-    <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-4 fade-up" style={{animationDelay:'200ms'}}><div className="flex items-center justify-between"><div><p className="m-0 text-[10px] font-bold uppercase tracking-wider text-teal">ISL recognition</p><h2 className="mb-0 mt-1 text-sm font-extrabold tracking-[-.04em]">Ready when you are</h2></div><div className="grid h-11 w-11 place-items-center rounded-2xl bg-[#f1edff] text-xl">⌁</div></div><p className="mb-3 mt-1 text-[11px] leading-relaxed text-slate-500">Practice a sign using your camera in the full studio.</p><button onClick={openStudio} className="w-full rounded-xl border border-ink bg-white px-3 py-2 text-xs font-bold text-ink">Start a recognition session</button></section>
-    {notice && <p className="mt-3 text-center text-[10px] text-teal">{notice}</p>}
-  </main>
+    const next = !settings.helperEnabled;
+    setSettings((prev) => ({ ...prev, helperEnabled: next }));
+    if (extensionApi?.storage?.sync) {
+      extensionApi.storage.sync.set({ helperEnabled: next });
+    }
+    if (extensionApi?.runtime) {
+      extensionApi.runtime.sendMessage({ type: 'TOGGLE_IN_PAGE_WIDGET' });
+    }
+    setNotice(next ? '✓ In-page helper active on tab.' : 'In-page helper hidden.');
+    setTimeout(() => setNotice(''), 3000);
+  };
+
+  const toggleThemeMode = () => {
+    const nextMode = isLightMode ? 'dark' : 'light';
+    setSettings((prev) => ({ ...prev, themeMode: nextMode }));
+    if (extensionApi?.storage?.sync) {
+      extensionApi.storage.sync.set({ themeMode: nextMode });
+    }
+    try {
+      localStorage.setItem('isl_theme_mode', nextMode);
+    } catch {}
+  };
+
+  const handleSelectTheme = (themeId) => {
+    setSettings((prev) => ({ ...prev, themeId }));
+    if (extensionApi?.storage?.sync) {
+      extensionApi.storage.sync.set({ themeId });
+    }
+  };
+
+  const openSidePanel = () => {
+    if (extensionApi?.runtime) {
+      extensionApi.runtime.sendMessage({ type: 'OPEN_SIDE_PANEL' });
+      setNotice('📌 Opened in Side Panel (Docked & Pinned)');
+    } else {
+      window.open('/sidepanel.html', '_blank');
+    }
+    setTimeout(() => setNotice(''), 3000);
+  };
+
+  const openPopoutWindow = () => {
+    if (extensionApi?.runtime) {
+      extensionApi.runtime.sendMessage({
+        type: 'OPEN_POPOUT_WINDOW',
+        page: 'index.html',
+        width: 420,
+        height: 660,
+      });
+      setNotice('🗔 Opened in Frozen Standalone Window');
+    } else {
+      window.open('/index.html', '_blank', 'width=420,height=660');
+    }
+    setTimeout(() => setNotice(''), 3000);
+  };
+
+  const toggleInPageWidget = () => {
+    if (extensionApi?.runtime) {
+      extensionApi.runtime.sendMessage({ type: 'TOGGLE_IN_PAGE_WIDGET' });
+      setNotice('🪟 In-page floating avatar toggled');
+    }
+    setTimeout(() => setNotice(''), 3000);
+  };
+
+  const openStudio = (subject = null) => {
+    const targetSubject = subject || settings.activeSubject;
+    if (subject && extensionApi?.storage?.sync) {
+      extensionApi.storage.sync.set({ activeSubject: subject });
+    }
+
+    if (extensionApi?.tabs) {
+      const url = extensionApi.runtime.getURL('learn.html');
+      extensionApi.tabs.create({ url });
+    } else {
+      window.open('/learn.html', '_blank');
+    }
+  };
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (inputText.trim()) {
+      const signWord = inputText.trim().toUpperCase();
+      setActiveSign(signWord);
+      setNotice(`Signing: ${inputText.trim()}`);
+      if (extensionApi?.tabs) {
+        extensionApi.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          if (tabs[0]?.id) {
+            extensionApi.tabs.sendMessage(tabs[0].id, {
+              type: 'PLAY_ISL_SEQUENCE',
+              tokens: [signWord],
+              mode: 'replace',
+            }).catch(() => {});
+          }
+        });
+      }
+      setTimeout(() => setNotice(''), 3000);
+    }
+  };
+
+  return (
+    <main className={`w-[390px] min-h-[640px] p-4 flex flex-col justify-between font-sans transition-colors duration-400 ${
+      isLightMode ? 'bg-[#faf8f5] text-[#1e1b18]' : 'bg-[#060913] text-white'
+    }`}>
+      <div>
+        {/* ─── Header ─────────────────────────────────────────── */}
+        <header className={`flex items-center justify-between pb-3 border-b transition-colors duration-400 ${
+          isLightMode ? 'border-[#e8e2d8]' : 'border-white/10'
+        }`}>
+          <div className="flex items-center gap-2.5">
+            <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-amber-400 flex items-center justify-center text-lg shadow-md shadow-indigo-500/20 text-white font-bold">
+              ✦
+            </div>
+            <div>
+              <h1 className={`text-sm font-black tracking-tight m-0 ${isLightMode ? 'text-[#1e1b18]' : 'text-white'}`}>
+                3D SignSTEM
+              </h1>
+              <p className={`text-[10px] m-0 ${isLightMode ? 'text-[#78716c]' : 'text-slate-400'}`}>
+                ISL 3D Avatar Companion
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={toggleThemeMode}
+              className={`p-1.5 rounded-lg border text-xs transition font-bold ${
+                isLightMode
+                  ? 'bg-white border-[#dcd4c8] text-[#c59b27] shadow-sm hover:bg-[#f5f0e6]'
+                  : 'bg-white/10 border-white/15 text-yellow-300 hover:bg-white/15'
+              }`}
+              title={isLightMode ? 'Switch to Midnight Dark' : 'Switch to Ivory White'}
+            >
+              {isLightMode ? '🌙' : '☀️'}
+            </button>
+
+            <button
+              onClick={toggleHelper}
+              className={`px-2.5 py-1.5 rounded-full text-[10px] font-bold transition flex items-center gap-1 border ${
+                settings.helperEnabled
+                  ? (isLightMode ? 'bg-emerald-50 border-emerald-300 text-emerald-700 shadow-sm' : 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400')
+                  : (isLightMode ? 'bg-white border-[#dcd4c8] text-[#78716c]' : 'bg-white/5 border-white/10 text-slate-400')
+              }`}
+            >
+              <span className={`h-1.5 w-1.5 rounded-full ${settings.helperEnabled ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+              {settings.helperEnabled ? 'Helper On' : 'Helper Off'}
+            </button>
+          </div>
+        </header>
+
+        {/* ─── Stay-Open / Freeze Mode Action Bar ──────────────── */}
+        <section className="mt-2.5 flex items-center gap-1.5">
+          <button
+            onClick={openSidePanel}
+            className={`flex-1 py-1.5 px-2 rounded-xl text-[10px] font-bold transition flex items-center justify-center gap-1 shadow-sm border ${
+              isLightMode
+                ? 'bg-white hover:bg-indigo-50 border-indigo-200 text-indigo-700'
+                : 'bg-indigo-600/15 hover:bg-indigo-600/30 border-indigo-500/30 text-indigo-300 hover:text-white'
+            }`}
+            title="Docks avatar on browser side panel — stays open permanently while you browse"
+          >
+            <span>📌</span>
+            <span>Live Camera</span>
+          </button>
+
+          <button
+            onClick={openPopoutWindow}
+            className={`flex-1 py-1.5 px-2 rounded-xl text-[10px] font-bold transition flex items-center justify-center gap-1 shadow-sm border ${
+              isLightMode
+                ? 'bg-white hover:bg-purple-50 border-purple-200 text-purple-700'
+                : 'bg-purple-600/15 hover:bg-purple-600/30 border-purple-500/30 text-purple-300 hover:text-white'
+            }`}
+            title="Opens avatar in a standalone detached window that never auto-closes"
+          >
+            <span>🗔</span>
+            <span>Freeze Window</span>
+          </button>
+
+          <button
+            onClick={toggleInPageWidget}
+            className={`flex-1 py-1.5 px-2 rounded-xl text-[10px] font-bold transition flex items-center justify-center gap-1 shadow-sm border ${
+              isLightMode
+                ? 'bg-white hover:bg-teal-50 border-teal-200 text-teal-700'
+                : 'bg-teal-600/15 hover:bg-teal-600/30 border-teal-500/30 text-teal-300 hover:text-white'
+            }`}
+            title="Toggles floating draggable avatar directly inside the current webpage"
+          >
+            <span>🪟</span>
+            <span>Float on Page</span>
+          </button>
+        </section>
+
+        {/* ─── LIVE 3D AVATAR VIEW ───────────────────────────── */}
+        <section className={`mt-2.5 rounded-2xl overflow-hidden shadow-xl relative h-[230px] flex flex-col justify-between border ${
+          isLightMode ? 'border-[#dcd4c8] bg-[#f5f0e6]' : 'border-indigo-500/30 bg-[#0f172a]'
+        }`}>
+          <div className="w-full h-full absolute inset-0">
+            <ZhenjaSignAvatar token={activeSign} playbackRate={1.0} themeMode={settings.themeMode} />
+          </div>
+
+          {/* Active Sign Overlay Badge */}
+          <div className="relative z-10 p-2.5 flex items-center justify-between pointer-events-none">
+            <span className="bg-indigo-600/90 backdrop-blur-md text-white text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow">
+              Signing: {activeSign}
+            </span>
+            <button
+              onClick={() => openStudio()}
+              className="pointer-events-auto bg-black/60 hover:bg-black/80 backdrop-blur-md text-white text-[10px] font-bold px-2.5 py-1 rounded-full border border-white/20 transition flex items-center gap-1 shadow"
+            >
+              <span>Full Studio</span>
+              <span>↗</span>
+            </button>
+          </div>
+        </section>
+
+        {/* ─── Sign Search Input ──────────────────────────────── */}
+        <form onSubmit={handleSearchSubmit} className="mt-2.5 flex items-center gap-1.5">
+          <input
+            type="text"
+            placeholder="Type any word or sign (e.g. Gravity)..."
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            className={`flex-1 px-3 py-2 rounded-xl text-xs border outline-none transition ${
+              isLightMode
+                ? 'bg-white border-[#dcd4c8] text-[#1e1b18] placeholder-[#a8a29e] focus:border-indigo-500 shadow-sm'
+                : 'bg-white/5 border-white/15 text-white focus:border-indigo-400'
+            }`}
+          />
+          <button
+            type="submit"
+            className="py-2 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition shadow-md shadow-indigo-600/30"
+          >
+            Sign
+          </button>
+        </form>
+
+        {/* ─── Quick Sign Buttons ─────────────────────────────── */}
+        <section className="mt-2.5">
+          <div className="flex items-center justify-between mb-1">
+            <h3 className={`text-xs font-black uppercase tracking-wider m-0 ${isLightMode ? 'text-[#57534e]' : 'text-slate-200'}`}>
+              Quick Signs
+            </h3>
+            <span className="text-[10px] text-indigo-600 font-bold">Live 3D Preview</span>
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {POPULAR_SIGNS.map((sign) => (
+              <button
+                key={sign}
+                onClick={() => {
+                  setActiveSign(sign);
+                  if (extensionApi?.tabs) {
+                    extensionApi.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                      if (tabs[0]?.id) {
+                        extensionApi.tabs.sendMessage(tabs[0].id, {
+                          type: 'PLAY_ISL_SEQUENCE',
+                          tokens: [sign],
+                          mode: 'replace',
+                        }).catch(() => {});
+                      }
+                    });
+                  }
+                }}
+                className={`px-2.5 py-1 rounded-lg border text-[11px] font-semibold transition ${
+                  activeSign === sign
+                    ? 'bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                    : isLightMode
+                      ? 'bg-white hover:bg-indigo-50 border-[#e0d8cc] text-[#292524] shadow-xs'
+                      : 'bg-white/5 hover:bg-indigo-600/30 border-white/10 text-slate-300'
+                }`}
+              >
+                {sign}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {/* ─── Theme Selector Bar ─────────────────────────────── */}
+        <section className={`mt-2.5 border rounded-xl p-2 transition-colors duration-400 ${
+          isLightMode ? 'bg-white border-[#e8e2d8] shadow-xs' : 'bg-white/5 border-white/10'
+        }`}>
+          <div className="flex items-center justify-between mb-1">
+            <span className={`text-[10px] font-bold uppercase tracking-wider ${isLightMode ? 'text-[#78716c]' : 'text-slate-300'}`}>
+              Theme Palette
+            </span>
+            <button onClick={() => openStudio()} className="text-[9px] text-indigo-600 font-bold hover:underline">
+              Open Full Studio →
+            </button>
+          </div>
+          <div className="flex items-center gap-1.5">
+            {EXTENSION_THEMES.map((theme) => (
+              <button
+                key={theme.id}
+                onClick={() => handleSelectTheme(theme.id)}
+                className={`flex-1 py-1 rounded-lg border text-[10px] font-bold transition flex items-center justify-center gap-1 ${
+                  settings.themeId === theme.id
+                    ? (isLightMode ? 'bg-indigo-50 border-indigo-400 text-indigo-700' : 'bg-indigo-600/20 border-indigo-500 text-indigo-400')
+                    : isLightMode ? 'bg-[#fcfaf7] border-[#e8e2d8] text-[#57534e]' : 'bg-black/30 border-white/10 text-slate-400'
+                }`}
+                title={theme.name}
+              >
+                <span className="h-2 w-2 rounded-full inline-block" style={{ background: isLightMode ? theme.light.primary : theme.dark.primary }} />
+                <span>{theme.name.split(' ')[0]}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      {/* ─── Footer Notice & Status ───────────────────────────── */}
+      <footer className={`mt-2.5 pt-2 border-t text-center ${isLightMode ? 'border-[#e8e2d8]' : 'border-white/10'}`}>
+        {notice ? (
+          <p className="text-[10px] text-emerald-600 font-bold m-0 animate-pulse">{notice}</p>
+        ) : (
+          <p className={`text-[10px] m-0 ${isLightMode ? 'text-[#8c827a]' : 'text-slate-400'}`}>
+            3D SignSTEM Extension v1.2 · Ivory White Studio
+          </p>
+        )}
+      </footer>
+    </main>
+  );
 }
-createRoot(document.getElementById('root')).render(<App />)
+
+const root = document.getElementById('root');
+if (root) {
+  createRoot(root).render(<PopupApp />);
+}

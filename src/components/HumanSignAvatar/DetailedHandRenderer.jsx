@@ -3,19 +3,19 @@ import React from 'react';
 /**
  * DetailedHandRenderer Component
  * 
- * Photorealistic Anatomical 5-Finger Hand Engine for Sign Language:
- * - Volumetric palm shading with thenar & hypothenar muscle pads
- * - 5 slender articulated fingers with MCP, PIP, and DIP joints
- * - Natural translucent fingernails with specular light catch
- * - Multi-stop skin tone gradients for true lifelike depth
- * - Anatomically accurate ISL hand formations
+ * Photorealistic Anatomical Slim Human 5-Finger Hand Engine:
+ * - Slim, elegant, finely proportioned human fingers & delicate palms
+ * - Tapered 3-phalange fingers with soft joint nodes & translucent fingernails
+ * - 1.25x refined scale for natural human proportion with zero clunkiness
  */
 export function DetailedHandRenderer({ shape = 'rest_relaxed', skin, isLeft = false }) {
-  const flip = isLeft ? -1 : 1;
   const uid = isLeft ? 'L' : 'R';
+  // Refined 1.25x scale for elegant, slim human hands
+  const scaleX = isLeft ? -1.25 : 1.25;
+  const scaleY = 1.25;
 
   return (
-    <g transform={`scale(${flip * 1.45}, 1.45)`} filter="drop-shadow(0 4px 8px rgba(0,0,0,0.25))">
+    <g transform={`scale(${scaleX}, ${scaleY})`} filter="drop-shadow(0 3px 8px rgba(0,0,0,0.3))">
       <defs>
         {/* Volumetric Palm Gradient */}
         <radialGradient id={`palmGrad_${uid}`} cx="45%" cy="40%" r="60%">
@@ -24,7 +24,7 @@ export function DetailedHandRenderer({ shape = 'rest_relaxed', skin, isLeft = fa
           <stop offset="100%" stopColor={skin.shadow} />
         </radialGradient>
 
-        {/* Finger Cylindrical 3D Gradient */}
+        {/* Slim Finger 3D Gradient */}
         <linearGradient id={`fingerGrad_${uid}`} x1="0%" y1="0%" x2="100%" y2="0%">
           <stop offset="0%" stopColor={skin.mid} />
           <stop offset="35%" stopColor={skin.base} />
@@ -32,7 +32,7 @@ export function DetailedHandRenderer({ shape = 'rest_relaxed', skin, isLeft = fa
           <stop offset="100%" stopColor={skin.shadow} />
         </linearGradient>
 
-        {/* Thumb Gradient */}
+        {/* Thumb Muscle Gradient */}
         <linearGradient id={`thumbGrad_${uid}`} x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor={skin.base} />
           <stop offset="60%" stopColor={skin.mid} />
@@ -41,9 +41,9 @@ export function DetailedHandRenderer({ shape = 'rest_relaxed', skin, isLeft = fa
 
         {/* Natural Translucent Fingernail Gradient */}
         <linearGradient id={`nailGrad_${uid}`} x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="rgba(255, 255, 255, 0.75)" />
-          <stop offset="40%" stopColor="rgba(254, 205, 211, 0.5)" />
-          <stop offset="100%" stopColor="rgba(255, 255, 255, 0.25)" />
+          <stop offset="0%" stopColor="rgba(255, 255, 255, 0.85)" />
+          <stop offset="40%" stopColor="rgba(254, 205, 211, 0.6)" />
+          <stop offset="100%" stopColor="rgba(255, 255, 255, 0.3)" />
         </linearGradient>
       </defs>
 
@@ -58,377 +58,205 @@ function renderRealisticShape(shape, skin, uid) {
   const thumbFill = `url(#thumbGrad_${uid})`;
   const nailFill = `url(#nailGrad_${uid})`;
   const creaseColor = skin.shadow;
-  const knuckleColor = skin.shadow;
+  const strokeCol = skin.shadow;
 
   switch (shape) {
-    // 1. OPEN 5 SPREAD (Lifelike open hand with spaced articulated fingers)
+    // 1. OPEN 5 SPREAD (Slim, elegant open 5-finger spread)
     case 'open_5_spread':
       return (
         <g>
-          {/* Main Palm Base */}
+          {/* Slim Palm Base */}
           <path
-            d="M -13 0 C -18 12 -15 26 0 28 C 15 26 18 12 13 0 Z"
+            d="M -10 0 C -14 7 -13 18 -8 22 C -2 24 6 24 10 20 C 13 15 12 7 10 0 Z"
             fill={palmFill}
           />
-          {/* Thenar & Hypothenar Contours */}
-          <path d="M -11 8 C -15 16 -12 24 -4 26" fill="none" stroke={creaseColor} strokeWidth="0.8" opacity="0.4" />
-          <path d="M -8 18 Q 0 21 8 16" fill="none" stroke={creaseColor} strokeWidth="0.8" opacity="0.35" />
+          <path d="M -7 7 C -11 13 -9 19 -2 21" fill="none" stroke={creaseColor} strokeWidth="0.6" opacity="0.4" />
 
-          {/* Opposable Thumb */}
+          {/* Slim Opposable Thumb */}
           <g>
             <path
-              d="M -11 6 C -21 8 -25 20 -17 24 C -12 24 -8 16 -7 10 Z"
+              d="M -8 5 C -16 6 -19 16 -13 20 C -9 20 -6 13 -5 8 Z"
               fill={thumbFill}
-              stroke={knuckleColor}
-              strokeWidth="0.5"
+              stroke={strokeCol}
+              strokeWidth="0.4"
             />
-            {/* Thumb Nail */}
-            <ellipse cx="-19" cy="21" rx="3.2" ry="1.8" fill={nailFill} transform="rotate(-30, -19, 21)" />
+            <ellipse cx="-15" cy="17.5" rx="2.4" ry="1.4" fill={nailFill} transform="rotate(-28, -15, 17.5)" />
           </g>
 
-          {/* Index Finger */}
+          {/* Slim Index Finger */}
           <g>
             <path
-              d="M -11 22 L -13 42 C -13 47 -7 47 -7 42 L -5 24 Z"
+              d="M -9 18 L -11 40 C -11 44 -6 44 -5 40 L -4 19 Z"
               fill={fingerFill}
-              stroke={knuckleColor}
-              strokeWidth="0.5"
+              stroke={strokeCol}
+              strokeWidth="0.4"
             />
-            <line x1="-11" y1="31" x2="-6.5" y2="31" stroke={knuckleColor} strokeWidth="0.6" opacity="0.6" />
-            <line x1="-12" y1="38" x2="-7" y2="38" stroke={knuckleColor} strokeWidth="0.6" opacity="0.6" />
-            <ellipse cx="-10" cy="43.5" rx="2.5" ry="1.4" fill={nailFill} />
+            <line x1="-9" y1="29" x2="-5.5" y2="29" stroke={creaseColor} strokeWidth="0.5" opacity="0.5" />
+            <ellipse cx="-8" cy="41.5" rx="2.1" ry="1.2" fill={nailFill} />
           </g>
 
-          {/* Middle Finger */}
+          {/* Slim Middle Finger */}
           <g>
             <path
-              d="M -5 24 L -5 48 C -5 53 1 53 1 48 L 1 26 Z"
+              d="M -4 19 L -4 44 C -4 48 1 48 1 44 L 1 20 Z"
               fill={fingerFill}
-              stroke={knuckleColor}
-              strokeWidth="0.5"
+              stroke={strokeCol}
+              strokeWidth="0.4"
             />
-            <line x1="-5" y1="33" x2="1" y2="33" stroke={knuckleColor} strokeWidth="0.6" opacity="0.6" />
-            <line x1="-5" y1="42" x2="1" y2="42" stroke={knuckleColor} strokeWidth="0.6" opacity="0.6" />
-            <ellipse cx="-2" cy="49.5" rx="2.6" ry="1.5" fill={nailFill} />
+            <line x1="-3" y1="32" x2="0.5" y2="32" stroke={creaseColor} strokeWidth="0.5" opacity="0.5" />
+            <ellipse cx="-1.5" cy="45.5" rx="2.2" ry="1.3" fill={nailFill} />
           </g>
 
-          {/* Ring Finger */}
+          {/* Slim Ring Finger */}
           <g>
             <path
-              d="M 1 24 L 3 44 C 3 49 9 49 9 44 L 7 24 Z"
+              d="M 1 20 L 3 41 C 3 45 7 45 7 41 L 6 19 Z"
               fill={fingerFill}
-              stroke={knuckleColor}
-              strokeWidth="0.5"
+              stroke={strokeCol}
+              strokeWidth="0.4"
             />
-            <line x1="3" y1="32" x2="8" y2="32" stroke={knuckleColor} strokeWidth="0.6" opacity="0.6" />
-            <line x1="3" y1="40" x2="9" y2="40" stroke={knuckleColor} strokeWidth="0.6" opacity="0.6" />
-            <ellipse cx="6" cy="45.5" rx="2.3" ry="1.3" fill={nailFill} />
+            <line x1="2" y1="30" x2="5.5" y2="30" stroke={creaseColor} strokeWidth="0.5" opacity="0.5" />
+            <ellipse cx="5" cy="42.5" rx="2.0" ry="1.2" fill={nailFill} />
           </g>
 
-          {/* Pinky Finger */}
+          {/* Slim Pinky Finger */}
           <g>
             <path
-              d="M 7 18 L 10 36 C 10 40 15 40 15 36 L 12 18 Z"
+              d="M 6 16 L 9 33 C 9 36 13 36 12 33 L 9 15 Z"
               fill={fingerFill}
-              stroke={knuckleColor}
-              strokeWidth="0.5"
+              stroke={strokeCol}
+              strokeWidth="0.4"
             />
-            <line x1="9" y1="26" x2="13.5" y2="26" stroke={knuckleColor} strokeWidth="0.6" opacity="0.6" />
-            <ellipse cx="12.5" cy="37" rx="1.9" ry="1.1" fill={nailFill} />
+            <ellipse cx="10.5" cy="34" rx="1.7" ry="1.0" fill={nailFill} />
           </g>
         </g>
       );
 
-    // 2. FLAT PALM (Anjali / Namaste / Courtesy)
+    // 2. FLAT PALM
     case 'flat_palm':
-    case 'namaste_prayer':
       return (
         <g>
-          <path d="M -12 0 C -16 12 -13 26 0 28 C 13 26 16 12 12 0 Z" fill={palmFill} />
-          <path d="M -9 15 Q 0 18 9 14" fill="none" stroke={creaseColor} strokeWidth="0.8" opacity="0.4" />
-
-          {/* Grouped 4 Straight Fingers */}
-          <path
-            d="M -10 22 L -10 48 C -10 54 10 54 10 48 L 10 22 Z"
-            fill={fingerFill}
-            stroke={knuckleColor}
-            strokeWidth="0.5"
-          />
-
-          {/* Finger Division & Joint Highlights */}
-          <line x1="-5" y1="24" x2="-5" y2="47" stroke={knuckleColor} strokeWidth="0.7" />
-          <line x1="0" y1="24" x2="0" y2="50" stroke={knuckleColor} strokeWidth="0.7" />
-          <line x1="5" y1="24" x2="5" y2="47" stroke={knuckleColor} strokeWidth="0.7" />
-
-          {/* Fingernails */}
-          <ellipse cx="-7.5" cy="47" rx="2.1" ry="1.2" fill={nailFill} />
-          <ellipse cx="-2.5" cy="50" rx="2.3" ry="1.3" fill={nailFill} />
-          <ellipse cx="2.5" cy="50" rx="2.3" ry="1.3" fill={nailFill} />
-          <ellipse cx="7.5" cy="47" rx="1.9" ry="1.1" fill={nailFill} />
-
-          {/* Tucked Thumb */}
-          <path d="M -11 6 C -18 8 -19 18 -12 20 Z" fill={thumbFill} stroke={knuckleColor} strokeWidth="0.5" />
+          <path d="M -10 0 C -13 7 -12 18 -6 20 C 0 22 6 22 10 18 C 12 14 11 7 10 0 Z" fill={palmFill} />
+          <g>
+            <path d="M -8 4 C -14 6 -16 15 -11 18 C -7 18 -5 12 -4 7 Z" fill={thumbFill} stroke={strokeCol} strokeWidth="0.4" />
+            <ellipse cx="-13" cy="16" rx="2.2" ry="1.3" fill={nailFill} />
+          </g>
+          <g>
+            <path d="M -8 18 L -9 39 C -9 42 -5 42 -5 39 L -4 18 Z" fill={fingerFill} stroke={strokeCol} strokeWidth="0.4" />
+            <ellipse cx="-7" cy="40" rx="1.9" ry="1.1" fill={nailFill} />
+            <path d="M -4 19 L -4 43 C -4 46 0 46 0 43 L 0 19 Z" fill={fingerFill} stroke={strokeCol} strokeWidth="0.4" />
+            <ellipse cx="-2" cy="44" rx="2.0" ry="1.2" fill={nailFill} />
+            <path d="M 0 18 L 1 39 C 1 42 5 42 5 39 L 4 18 Z" fill={fingerFill} stroke={strokeCol} strokeWidth="0.4" />
+            <ellipse cx="3" cy="40" rx="1.8" ry="1.1" fill={nailFill} />
+            <path d="M 4 16 L 6 33 C 6 35 9 35 9 33 L 7 15 Z" fill={fingerFill} stroke={strokeCol} strokeWidth="0.4" />
+            <ellipse cx="7.5" cy="34" rx="1.5" ry="0.9" fill={nailFill} />
+          </g>
         </g>
       );
 
-    // 3. POINT INDEX (Single index extended, other fingers folded naturally)
+    // 3. POINT INDEX
     case 'point_index':
       return (
         <g>
-          <path d="M -12 0 C -15 12 -12 24 0 24 C 12 24 15 12 12 0 Z" fill={palmFill} />
-
-          {/* Extended Index Finger */}
+          <path d="M -8 0 C -12 7 -11 17 0 19 C 11 17 12 7 8 0 Z" fill={palmFill} />
+          <path d="M -2 8 C 2 13 6 13 9 8 C 8 15 2 15 -2 8 Z" fill={fingerFill} stroke={strokeCol} strokeWidth="0.4" />
           <g>
-            <path
-              d="M -8 18 L -8 50 C -8 55 -2 55 -2 50 L -2 18 Z"
-              fill={fingerFill}
-              stroke={knuckleColor}
-              strokeWidth="0.6"
-            />
-            <line x1="-8" y1="30" x2="-2" y2="30" stroke={knuckleColor} strokeWidth="0.6" opacity="0.6" />
-            <line x1="-8" y1="41" x2="-2" y2="41" stroke={knuckleColor} strokeWidth="0.6" opacity="0.6" />
-            <ellipse cx="-5" cy="51" rx="2.5" ry="1.4" fill={nailFill} />
+            <path d="M -8 15 L -9 42 C -9 46 -4 46 -4 42 L -3 15 Z" fill={fingerFill} stroke={strokeCol} strokeWidth="0.4" />
+            <ellipse cx="-6.5" cy="43" rx="2.1" ry="1.2" fill={nailFill} />
           </g>
-
-          {/* Curled Middle, Ring, Pinky Knuckles */}
-          <path d="M -1 18 C 6 18 11 14 11 7 C 11 2 4 4 0 6 Z" fill={skin.mid} stroke={knuckleColor} strokeWidth="0.5" />
-          <line x1="3.5" y1="16" x2="3.5" y2="7" stroke={knuckleColor} strokeWidth="0.5" />
-          <line x1="7.5" y1="15" x2="7.5" y2="7" stroke={knuckleColor} strokeWidth="0.5" />
-
-          {/* Thumb Over Middle Knuckle */}
-          <path d="M -10 6 C -16 8 -16 18 -8 19 C -3 19 -3 11 -6 6 Z" fill={thumbFill} stroke={knuckleColor} strokeWidth="0.5" />
+          <path d="M -7 3 C -14 6 -12 15 -6 15 Z" fill={thumbFill} stroke={strokeCol} strokeWidth="0.4" />
         </g>
       );
 
-    // 4. TWO FINGERS H / N (Index and Middle extended)
-    case 'two_fingers_h':
-      return (
-        <g>
-          <path d="M -12 0 C -15 12 -12 24 0 24 C 12 24 15 12 12 0 Z" fill={palmFill} />
-
-          {/* Extended Index & Middle Pair */}
-          <path
-            d="M -9 20 L -9 48 C -9 53 3 53 3 48 L 3 20 Z"
-            fill={fingerFill}
-            stroke={knuckleColor}
-            strokeWidth="0.6"
-          />
-          <line x1="-3" y1="22" x2="-3" y2="49" stroke={knuckleColor} strokeWidth="0.6" />
-          <ellipse cx="-6" cy="49" rx="2.3" ry="1.3" fill={nailFill} />
-          <ellipse cx="0" cy="49" rx="2.3" ry="1.3" fill={nailFill} />
-
-          {/* Curled Ring & Pinky */}
-          <path d="M 4 16 C 9 16 12 12 12 7 C 12 3 7 4 3 5 Z" fill={skin.mid} stroke={knuckleColor} strokeWidth="0.5" />
-          {/* Thumb */}
-          <path d="M -10 6 C -16 8 -16 18 -8 19 Z" fill={thumbFill} stroke={knuckleColor} strokeWidth="0.5" />
-        </g>
-      );
-
-    // 5. PEACE V (Index and Middle spread)
-    case 'peace_v':
-      return (
-        <g>
-          <path d="M -12 0 C -15 12 -12 24 0 24 C 12 24 15 12 12 0 Z" fill={palmFill} />
-
-          {/* Index Finger (Angled Left) */}
-          <g>
-            <path
-              d="M -7 18 L -15 48 C -15 53 -9 54 -7 50 L -2 18 Z"
-              fill={fingerFill}
-              stroke={knuckleColor}
-              strokeWidth="0.6"
-            />
-            <ellipse cx="-12" cy="50.5" rx="2.4" ry="1.4" fill={nailFill} transform="rotate(-18, -12, 50.5)" />
-          </g>
-
-          {/* Middle Finger (Angled Right) */}
-          <g>
-            <path
-              d="M -1 18 L 6 49 C 8 54 14 53 14 48 L 7 18 Z"
-              fill={fingerFill}
-              stroke={knuckleColor}
-              strokeWidth="0.6"
-            />
-            <ellipse cx="10" cy="50.5" rx="2.4" ry="1.4" fill={nailFill} transform="rotate(18, 10, 50.5)" />
-          </g>
-
-          {/* Curled Ring & Pinky */}
-          <path d="M 7 14 C 11 14 13 10 13 5 Z" fill={skin.mid} stroke={knuckleColor} strokeWidth="0.5" />
-          {/* Thumb */}
-          <path d="M -10 6 C -16 8 -16 18 -8 19 Z" fill={thumbFill} stroke={knuckleColor} strokeWidth="0.5" />
-        </g>
-      );
-
-    // 6. TWO FINGERS L (Upright index, horizontal thumb)
-    case 'two_fingers_l':
-      return (
-        <g>
-          <path d="M -12 0 C -15 12 -12 24 0 24 C 12 24 15 12 12 0 Z" fill={palmFill} />
-
-          {/* Upright Index */}
-          <path
-            d="M -5 18 L -5 50 C -5 55 1 55 1 50 L 1 18 Z"
-            fill={fingerFill}
-            stroke={knuckleColor}
-            strokeWidth="0.6"
-          />
-          <ellipse cx="-2" cy="51.5" rx="2.4" ry="1.4" fill={nailFill} />
-
-          {/* Horizontal Thumb */}
-          <path
-            d="M -10 6 L -30 6 C -34 6 -34 14 -30 14 L -8 18 Z"
-            fill={thumbFill}
-            stroke={knuckleColor}
-            strokeWidth="0.6"
-          />
-          <ellipse cx="-30" cy="10" rx="1.6" ry="2.4" fill={nailFill} />
-
-          {/* Curled Middle, Ring, Pinky */}
-          <path d="M 2 16 C 8 16 12 11 12 6 Z" fill={skin.mid} stroke={knuckleColor} strokeWidth="0.5" />
-        </g>
-      );
-
-    // 7. THUMBS UP
+    // 4. THUMBS UP
     case 'thumbs_up':
       return (
         <g>
-          <path d="M -12 0 C -15 12 -12 24 0 24 C 12 24 15 12 12 0 Z" fill={palmFill} />
-
-          {/* Upright Thumb */}
+          <path d="M -10 0 C -13 7 -11 17 0 19 C 11 17 13 7 10 0 Z" fill={palmFill} />
+          <path d="M -6 8 Q 0 15 6 8 Q 0 19 -6 8 Z" fill={fingerFill} stroke={strokeCol} strokeWidth="0.4" />
           <g>
-            <path
-              d="M -12 6 C -22 8 -26 -16 -14 -18 C -9 -18 -7 -2 -7 6 Z"
-              fill={thumbFill}
-              stroke={knuckleColor}
-              strokeWidth="0.6"
-            />
-            <ellipse cx="-18" cy="-14" rx="2.6" ry="1.6" fill={nailFill} transform="rotate(-30, -18, -14)" />
+            <path d="M -8 5 C -16 2 -21 20 -15 26 C -10 26 -6 16 -5 8 Z" fill={thumbFill} stroke={strokeCol} strokeWidth="0.4" />
+            <ellipse cx="-17" cy="22" rx="2.5" ry="1.4" fill={nailFill} transform="rotate(-38, -17, 22)" />
           </g>
-
-          {/* Folded 4-Finger Fist */}
-          <path d="M -6 18 C 6 18 12 13 12 5 C 12 -2 2 0 -5 4 Z" fill={skin.mid} stroke={knuckleColor} strokeWidth="0.5" />
         </g>
       );
 
-    // 8. C-CURVE / CUPPED
-    case 'c_curve':
-    case 'cupped_palm_up':
+    // 5. FIST
+    case 'fist':
       return (
         <g>
-          <path d="M -12 0 C -15 12 -12 24 0 26 C 12 24 15 12 12 0 Z" fill={palmFill} />
-          {/* Upper curved 4 fingers */}
-          <path
-            d="M -10 20 C -16 32 -8 42 3 40 C 10 38 13 30 10 22 Z"
-            fill={fingerFill}
-            stroke={knuckleColor}
-            strokeWidth="0.6"
-          />
-          {/* Lower curved thumb */}
-          <path d="M -10 8 C -22 10 -20 26 -8 24 Z" fill={thumbFill} stroke={knuckleColor} strokeWidth="0.5" />
+          <path d="M -10 0 C -13 7 -11 17 0 19 C 11 17 13 7 10 0 Z" fill={palmFill} />
+          <path d="M -8 8 Q 0 14 6 8" fill="none" stroke={creaseColor} strokeWidth="2.0" strokeLinecap="round" />
+          <path d="M -9 4 C -14 7 -12 17 -5 17 Z" fill={thumbFill} stroke={strokeCol} strokeWidth="0.4" />
         </g>
       );
 
-    // 9. THREE FINGERS (M-letter 3-finger group)
-    case 'three_fingers':
-      return (
-        <g>
-          <path d="M -12 0 C -15 12 -12 24 0 24 C 12 24 15 12 12 0 Z" fill={palmFill} />
-          <path
-            d="M -10 20 L -10 44 C -10 49 8 49 8 44 L 8 20 Z"
-            fill={fingerFill}
-            stroke={knuckleColor}
-            strokeWidth="0.6"
-          />
-          <line x1="-4" y1="22" x2="-4" y2="46" stroke={knuckleColor} strokeWidth="0.6" />
-          <line x1="2" y1="22" x2="2" y2="46" stroke={knuckleColor} strokeWidth="0.6" />
-          <ellipse cx="-7" cy="45" rx="2" ry="1.2" fill={nailFill} />
-          <ellipse cx="-1" cy="45.5" rx="2" ry="1.2" fill={nailFill} />
-          <ellipse cx="5" cy="45" rx="2" ry="1.2" fill={nailFill} />
-          <path d="M 8 14 C 12 14 13 10 13 6 Z" fill={skin.mid} />
-          <path d="M -10 6 C -16 8 -16 18 -8 19 Z" fill={thumbFill} />
-        </g>
-      );
-
-    // 10. HOOK INDEX
-    case 'hook_index':
-      return (
-        <g>
-          <path d="M -12 0 C -15 12 -12 24 0 24 C 12 24 15 12 12 0 Z" fill={palmFill} />
-          <path
-            d="M -7 18 L -7 36 C -7 44 5 44 5 34 L 1 28 Z"
-            fill={fingerFill}
-            stroke={knuckleColor}
-            strokeWidth="0.6"
-          />
-          <path d="M 2 16 C 7 16 11 11 11 6 Z" fill={skin.mid} />
-          <path d="M -10 6 C -16 8 -16 18 -8 19 Z" fill={thumbFill} />
-        </g>
-      );
-
-    // 11. CROSSED R
-    case 'crossed_r':
-      return (
-        <g>
-          <path d="M -12 0 C -15 12 -12 24 0 24 C 12 24 15 12 12 0 Z" fill={palmFill} />
-          <path
-            d="M -8 18 L 1 50 C 2 54 7 53 6 49 L -1 18 Z"
-            fill={fingerFill}
-            stroke={knuckleColor}
-            strokeWidth="0.6"
-          />
-          <path
-            d="M -1 18 L -10 50 C -11 54 -6 53 -5 49 L 3 18 Z"
-            fill={fingerFill}
-            stroke={knuckleColor}
-            strokeWidth="0.6"
-          />
-          <path d="M 5 16 C 9 16 12 11 12 6 Z" fill={skin.mid} />
-          <path d="M -10 6 C -16 8 -16 18 -8 19 Z" fill={thumbFill} />
-        </g>
-      );
-
-    // 12. REST RELAXED (Natural human resting curvature at sides)
+    // 6. NATURAL SLIM RELAXED HUMAN REST (IDLE Pose)
+    case 'rest_relaxed':
     default:
       return (
         <g>
-          {/* Natural Palm Base */}
+          {/* Slim Anatomical Palm */}
           <path
-            d="M -12 0 C -16 10 -13 22 0 24 C 13 22 16 10 12 0 Z"
+            d="M -10 0 C -13 7 -12 17 -7 20 C -2 22 6 22 10 18 C 13 14 12 7 9 0 Z"
             fill={palmFill}
           />
-          {/* Thenar Crease */}
-          <path d="M -8 8 Q -3 15 -1 22" fill="none" stroke={creaseColor} strokeWidth="0.7" opacity="0.3" />
+          <path d="M -6 6 C -10 12 -8 17 -2 19" fill="none" stroke={creaseColor} strokeWidth="0.5" opacity="0.4" />
 
-          {/* Gracefully Curved Relaxed Fingers */}
-          {/* Index & Middle Curved Forefront */}
+          {/* Slim Opposable Thumb */}
           <g>
             <path
-              d="M -8 16 C -7 28 -2 33 2 30 C 4 28 3 18 0 14 Z"
-              fill={fingerFill}
-              stroke={knuckleColor}
-              strokeWidth="0.5"
+              d="M -8 4 C -15 6 -17 15 -11 18 C -7 18 -5 12 -4 6 Z"
+              fill={thumbFill}
+              stroke={strokeCol}
+              strokeWidth="0.4"
             />
-            <ellipse cx="-2.5" cy="30" rx="2" ry="1.2" fill={nailFill} />
+            <ellipse cx="-13" cy="16" rx="2.3" ry="1.3" fill={nailFill} transform="rotate(-25, -13, 16)" />
           </g>
 
-          {/* Ring & Pinky Curved Slightly Behind */}
+          {/* Slim Index Finger (Gently Curled) */}
           <g>
             <path
-              d="M 1 16 C 3 28 7 32 10 28 C 12 26 10 17 7 13 Z"
+              d="M -8 17 C -10 24 -9 33 -5 36 C -3 36 -4 31 -4 18 Z"
               fill={fingerFill}
-              stroke={knuckleColor}
-              strokeWidth="0.5"
+              stroke={strokeCol}
+              strokeWidth="0.4"
             />
-            <ellipse cx="6" cy="29" rx="1.8" ry="1.1" fill={nailFill} />
+            <ellipse cx="-6" cy="36.5" rx="1.9" ry="1.1" fill={nailFill} />
           </g>
 
-          {/* Soft Thumb Tucked Naturally */}
-          <path
-            d="M -10 4 C -16 6 -16 15 -9 16 Z"
-            fill={thumbFill}
-            stroke={knuckleColor}
-            strokeWidth="0.5"
-          />
+          {/* Slim Middle Finger (Gently Curled) */}
+          <g>
+            <path
+              d="M -4 18 C -5 27 -4 37 0 40 C 2 40 1 34 0 19 Z"
+              fill={fingerFill}
+              stroke={strokeCol}
+              strokeWidth="0.4"
+            />
+            <ellipse cx="-1" cy="40.5" rx="2.0" ry="1.2" fill={nailFill} />
+          </g>
+
+          {/* Slim Ring Finger (Gently Curled) */}
+          <g>
+            <path
+              d="M 0 18 C 0 25 2 35 4 37 C 6 37 5 32 4 18 Z"
+              fill={fingerFill}
+              stroke={strokeCol}
+              strokeWidth="0.4"
+            />
+            <ellipse cx="3.5" cy="37.5" rx="1.8" ry="1.1" fill={nailFill} />
+          </g>
+
+          {/* Slim Pinky Finger (Gently Curled) */}
+          <g>
+            <path
+              d="M 5 15 C 6 22 7 30 9 31 C 11 31 10 26 8 14 Z"
+              fill={fingerFill}
+              stroke={strokeCol}
+              strokeWidth="0.4"
+            />
+            <ellipse cx="9" cy="31.5" rx="1.5" ry="0.9" fill={nailFill} />
+          </g>
         </g>
       );
   }

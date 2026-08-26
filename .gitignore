@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Production builds
+dist/
+build/
+
+# Logs & temp files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dev-output.log
+
+# IDE & OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Media and dataset archives
+*.zip
+*.tar.gz
+datasets/
+hamnosys_pkls_default_shape.zip
+hamnosys_pkls_default_shape/
+human_model_files/
+scratch/
+__pycache__/
+*.pyc
+/zhenja.glb
+
+# Local system artifacts
+.tempmediaStorage/
+.system_generated/

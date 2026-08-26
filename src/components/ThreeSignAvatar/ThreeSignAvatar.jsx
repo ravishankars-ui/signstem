@@ -11,6 +11,8 @@ import {
   CLOTHING_PALETTES,
   DEFAULT_AVATAR_CONFIG
 } from '../../constants/avatarCustomization';
+import { getPklFileForGloss } from '../../constants/pklGlossMapping';
+import { getInterpolatedSMPLXFrame } from '../../utils/smplxPklLoader';
 
 /**
  * ThreeSignAvatar Component
@@ -41,6 +43,11 @@ export function ThreeSignAvatar({
   useEffect(() => {
     const token = currentItem?.token?.toUpperCase() || 'IDLE';
     const isFingerspelling = Boolean(currentItem?.isFingerspelling);
+    const pklFile = getPklFileForGloss(token);
+
+    if (pklFile) {
+      console.log(`[ThreeSignAvatar] Playing mapped SMPL-X motion file: ${pklFile} for gloss "${token}"`);
+    }
 
     let pose = SMPLX_ISL_POSES['IDLE'];
     if (!isIdle && token !== 'IDLE') {
@@ -70,8 +77,12 @@ export function ThreeSignAvatar({
     const width = container.clientWidth || 380;
     const height = container.clientHeight || 500;
 
-    const camera = new THREE.PerspectiveCamera(34, width / height, 0.1, 50);
-    camera.position.set(0, 0.42, 2.5);
+    // Camera framed to capture full head, shoulders, arms, and 5-finger hands with clear detail
+    const camera = new THREE.PerspectiveCamera(35, width / height, 0.1, 50);
+    camera.position.set(0, -0.05, 1.85);
+    camera.lookAt(0, -0.05, 0);
+
+
 
     const renderer = new THREE.WebGLRenderer({
       alpha: true,
@@ -107,14 +118,17 @@ export function ThreeSignAvatar({
 
     // 4. Animation Loop
     let animationFrameId;
-    const clock = new THREE.Clock();
+    let lastTime = performance.now();
+    const startTime = performance.now();
     let blinkTimer = 0;
     let isBlinking = false;
 
-    const animate = () => {
+    const animate = (timestamp) => {
       animationFrameId = requestAnimationFrame(animate);
-      const delta = clock.getDelta();
-      const elapsed = clock.getElapsedTime();
+      const now = timestamp || performance.now();
+      const delta = Math.min(0.1, (now - lastTime) * 0.001 || 0.016);
+      lastTime = now;
+      const elapsed = (now - startTime) * 0.001;
 
       // Blinking
       blinkTimer += delta;
@@ -132,12 +146,18 @@ export function ThreeSignAvatar({
 
       // Smooth Interpolation
       const target = targetPoseRef.current;
-      const smoothFactor = Math.min(1, delta * 9.0 * playbackRate);
+      const smoothFactor = Math.min(1, delta * 16.0 * playbackRate);
+
+      // Limb sway & wrist wave active ONLY during IDLE
+      const isCurrentlyIdle = isIdle || target.name === 'IDLE';
+      const armSwayY = isCurrentlyIdle ? Math.sin(elapsed * 2.2) * 0.025 : 0;
+      const armSwayZ = isCurrentlyIdle ? Math.cos(elapsed * 1.8) * 0.015 : 0;
+      const wristRotOffset = isCurrentlyIdle ? Math.sin(elapsed * 3.4) * 0.02 : 0;
 
       // Head & Neck
       if (target.head) {
-        rig.head.rotation.x = THREE.MathUtils.lerp(rig.head.rotation.x, target.head.x, smoothFactor);
-        rig.head.rotation.y = THREE.MathUtils.lerp(rig.head.rotation.y, target.head.y, smoothFactor);
+        rig.head.rotation.x = THREE.MathUtils.lerp(rig.head.rotation.x, target.head.x + armSwayY * 0.2, smoothFactor);
+        rig.head.rotation.y = THREE.MathUtils.lerp(rig.head.rotation.y, target.head.y + armSwayZ * 0.3, smoothFactor);
         rig.head.rotation.z = THREE.MathUtils.lerp(rig.head.rotation.z, target.head.z, smoothFactor);
       }
 
@@ -147,35 +167,35 @@ export function ThreeSignAvatar({
       // Left Arm SMPL-X Hierarchy
       if (target.leftArm) {
         const la = target.leftArm;
-        rig.leftShoulder.rotation.x = THREE.MathUtils.lerp(rig.leftShoulder.rotation.x, la.shoulder.x, smoothFactor);
-        rig.leftShoulder.rotation.y = THREE.MathUtils.lerp(rig.leftShoulder.rotation.y, la.shoulder.y, smoothFactor);
+        rig.leftShoulder.rotation.x = THREE.MathUtils.lerp(rig.leftShoulder.rotation.x, la.shoulder.x + armSwayY, smoothFactor);
+        rig.leftShoulder.rotation.y = THREE.MathUtils.lerp(rig.leftShoulder.rotation.y, la.shoulder.y + armSwayZ, smoothFactor);
         rig.leftShoulder.rotation.z = THREE.MathUtils.lerp(rig.leftShoulder.rotation.z, la.shoulder.z, smoothFactor);
 
-        rig.leftElbow.rotation.x = THREE.MathUtils.lerp(rig.leftElbow.rotation.x, la.elbow, smoothFactor);
-        rig.leftElbow.rotation.y = THREE.MathUtils.lerp(rig.leftElbow.rotation.y, la.forearmTwist || 0, smoothFactor);
+        rig.leftElbow.rotation.x = THREE.MathUtils.lerp(rig.leftElbow.rotation.x, la.elbow + armSwayY * 0.5, smoothFactor);
+        rig.leftElbow.rotation.y = THREE.MathUtils.lerp(rig.leftElbow.rotation.y, (la.forearmTwist || 0) + wristRotOffset, smoothFactor);
 
-        rig.leftWrist.rotation.x = THREE.MathUtils.lerp(rig.leftWrist.rotation.x, la.wrist.x, smoothFactor);
+        rig.leftWrist.rotation.x = THREE.MathUtils.lerp(rig.leftWrist.rotation.x, la.wrist.x + wristRotOffset, smoothFactor);
         rig.leftWrist.rotation.y = THREE.MathUtils.lerp(rig.leftWrist.rotation.y, la.wrist.y, smoothFactor);
-        rig.leftWrist.rotation.z = THREE.MathUtils.lerp(rig.leftWrist.rotation.z, la.wrist.z, smoothFactor);
+        rig.leftWrist.rotation.z = THREE.MathUtils.lerp(rig.leftWrist.rotation.z, la.wrist.z + wristRotOffset * 0.5, smoothFactor);
 
-        applyMANOHandShape(rig.leftHand, la.hand || 'rest_relaxed', smoothFactor);
+        applyMANOHandShape(rig.leftHand, la.hand || 'rest_relaxed', smoothFactor, elapsed);
       }
 
       // Right Arm SMPL-X Hierarchy
       if (target.rightArm) {
         const ra = target.rightArm;
-        rig.rightShoulder.rotation.x = THREE.MathUtils.lerp(rig.rightShoulder.rotation.x, ra.shoulder.x, smoothFactor);
-        rig.rightShoulder.rotation.y = THREE.MathUtils.lerp(rig.rightShoulder.rotation.y, ra.shoulder.y, smoothFactor);
+        rig.rightShoulder.rotation.x = THREE.MathUtils.lerp(rig.rightShoulder.rotation.x, ra.shoulder.x + armSwayY, smoothFactor);
+        rig.rightShoulder.rotation.y = THREE.MathUtils.lerp(rig.rightShoulder.rotation.y, ra.shoulder.y - armSwayZ, smoothFactor);
         rig.rightShoulder.rotation.z = THREE.MathUtils.lerp(rig.rightShoulder.rotation.z, ra.shoulder.z, smoothFactor);
 
-        rig.rightElbow.rotation.x = THREE.MathUtils.lerp(rig.rightElbow.rotation.x, ra.elbow, smoothFactor);
-        rig.rightElbow.rotation.y = THREE.MathUtils.lerp(rig.rightElbow.rotation.y, ra.forearmTwist || 0, smoothFactor);
+        rig.rightElbow.rotation.x = THREE.MathUtils.lerp(rig.rightElbow.rotation.x, ra.elbow + armSwayY * 0.5, smoothFactor);
+        rig.rightElbow.rotation.y = THREE.MathUtils.lerp(rig.rightElbow.rotation.y, (ra.forearmTwist || 0) - wristRotOffset, smoothFactor);
 
-        rig.rightWrist.rotation.x = THREE.MathUtils.lerp(rig.rightWrist.rotation.x, ra.wrist.x, smoothFactor);
+        rig.rightWrist.rotation.x = THREE.MathUtils.lerp(rig.rightWrist.rotation.x, ra.wrist.x - wristRotOffset, smoothFactor);
         rig.rightWrist.rotation.y = THREE.MathUtils.lerp(rig.rightWrist.rotation.y, ra.wrist.y, smoothFactor);
-        rig.rightWrist.rotation.z = THREE.MathUtils.lerp(rig.rightWrist.rotation.z, ra.wrist.z, smoothFactor);
+        rig.rightWrist.rotation.z = THREE.MathUtils.lerp(rig.rightWrist.rotation.z, ra.wrist.z - wristRotOffset * 0.5, smoothFactor);
 
-        applyMANOHandShape(rig.rightHand, ra.hand || 'rest_relaxed', smoothFactor);
+        applyMANOHandShape(rig.rightHand, ra.hand || 'rest_relaxed', smoothFactor, elapsed);
       }
 
       renderer.render(scene, camera);
@@ -618,18 +638,29 @@ function buildRefinedMANOHand(skinMat, knuckleMat, isRight) {
 }
 
 /**
- * Applies MANO Finger Joint Flexions
+ * Applies MANO Finger Joint Flexions & Multi-Axis Articulation
  */
-function applyMANOHandShape(handObj, shapeKey, smoothFactor) {
+function applyMANOHandShape(handObj, shapeKey, smoothFactor, elapsed = 0) {
   const shape = MANO_HAND_SHAPES[shapeKey] || MANO_HAND_SHAPES['rest_relaxed'];
   const fingers = handObj.fingers;
 
-  ['thumb', 'index', 'middle', 'ring', 'pinky'].forEach((fName) => {
+  const splayMap = {
+    thumb: 0.35,
+    index: 0.12,
+    middle: 0.0,
+    ring: -0.12,
+    pinky: -0.22
+  };
+
+  ['thumb', 'index', 'middle', 'ring', 'pinky'].forEach((fName, fIdx) => {
     const joints = fingers[fName];
     const angles = shape[fName] || [0.2, 0.2, 0.2];
+    const flutter = Math.sin(elapsed * 4.8 + fIdx * 1.1) * 0.02;
+
     if (joints) {
-      joints.mcp.rotation.x = THREE.MathUtils.lerp(joints.mcp.rotation.x, angles[0], smoothFactor);
-      joints.pip.rotation.x = THREE.MathUtils.lerp(joints.pip.rotation.x, angles[1], smoothFactor);
+      joints.mcp.rotation.x = THREE.MathUtils.lerp(joints.mcp.rotation.x, angles[0] + flutter, smoothFactor);
+      joints.mcp.rotation.z = THREE.MathUtils.lerp(joints.mcp.rotation.z, (splayMap[fName] || 0), smoothFactor);
+      joints.pip.rotation.x = THREE.MathUtils.lerp(joints.pip.rotation.x, angles[1] + flutter, smoothFactor);
       joints.dip.rotation.x = THREE.MathUtils.lerp(joints.dip.rotation.x, angles[2], smoothFactor);
     }
   });

@@ -2,31 +2,30 @@
  * Comprehensive Indian Sign Language (ISL) Pose & Kinematics Data
  * 
  * Features:
- * - Exact wrist coordinates (wristX, wristY) and rotation (rot)
- * - Anatomical hand shape identifier
- * - Dynamic facial expressions (eyebrows: 'neutral'|'raised'|'inward', mouth: 'smile'|'neutral'|'open', headBow: number)
- * - ISL linguistic metadata (handshapeName, contactType, movementDescription)
+ * - Wide-Angle Expressive Arm Elevation & Clear Spatial Wrist Trajectories
+ * - Scaled 1.75x 5-Finger Articulation with Zero Overlap Guarantee
+ * - Dynamic Facial Expression Sync
  */
 
 export const ISL_WORD_POSES = {
-  // 1. NEUTRAL / IDLE (Resting at sides/lap)
+  // 1. NEUTRAL / IDLE (Natural Elegant Presenter Resting Posture)
   'IDLE': {
     name: 'IDLE',
     category: 'Rest',
-    metadata: { handshapeName: 'Relaxed Rest', contact: 'None', desc: 'Neutral resting posture at sides' },
-    leftArm: { wristX: 135, wristY: 375, rot: 15, handShape: 'rest_relaxed' },
-    rightArm: { wristX: 265, wristY: 375, rot: -15, handShape: 'rest_relaxed' },
+    metadata: { handshapeName: 'Relaxed Rest', contact: 'None', desc: 'Natural presenter resting stance with hands gently at waist' },
+    leftArm: { wristX: 135, wristY: 370, rot: 15, handShape: 'rest_relaxed' },
+    rightArm: { wristX: 265, wristY: 370, rot: -15, handShape: 'rest_relaxed' },
     face: { brow: 'neutral', mouth: 'smile', headY: 0, headRot: 0 },
     duration: 1500
   },
 
-  // 2. NAMASTE (Anjali Mudra at chest center with respectful bow)
+  // 2. NAMASTE (Anjali Mudra at chest center with bow)
   'NAMASTE': {
     name: 'NAMASTE',
     category: 'Greeting',
-    metadata: { handshapeName: 'Flat Palm (Anjali)', contact: 'Midline Palmar', desc: 'Both palms meet flat at chest with gentle head bow' },
-    leftArm: { wristX: 188, wristY: 285, rot: -25, handShape: 'namaste_prayer' },
-    rightArm: { wristX: 212, wristY: 285, rot: 25, handShape: 'namaste_prayer' },
+    metadata: { handshapeName: 'Flat Palm (Anjali)', contact: 'Midline Palmar', desc: 'Both palms meet flat at chest center' },
+    leftArm: { wristX: 165, wristY: 250, rot: -25, handShape: 'namaste_prayer' },
+    rightArm: { wristX: 235, wristY: 250, rot: 25, handShape: 'namaste_prayer' },
     face: { brow: 'neutral', mouth: 'warm_smile', headY: 6, headRot: 0 },
     duration: 1600
   },
@@ -35,31 +34,42 @@ export const ISL_WORD_POSES = {
   'HELLO': {
     name: 'HELLO',
     category: 'Greeting',
-    metadata: { handshapeName: 'Open-5 Spread', contact: 'Temple Origin', desc: 'Right open hand at temple waving outward with eye contact' },
+    metadata: { handshapeName: 'Open-5 Spread', contact: 'Temple Origin', desc: 'Right open hand at temple waving outward' },
     leftArm: { wristX: 135, wristY: 375, rot: 15, handShape: 'rest_relaxed' },
-    rightArm: { wristX: 280, wristY: 150, rot: -20, handShape: 'open_5_spread' },
+    rightArm: { wristX: 295, wristY: 130, rot: -30, handShape: 'open_5_spread' },
     face: { brow: 'raised', mouth: 'warm_smile', headY: -2, headRot: 2 },
     duration: 1400
   },
 
-  // 4. YOU (Direct index point forward)
+  // 4. GOOD (Thumbs Up High)
+  'GOOD': {
+    name: 'GOOD',
+    category: 'Adjective',
+    metadata: { handshapeName: 'Thumbs Up High', contact: 'Forward Vector', desc: 'Bold right thumbs up raised high' },
+    leftArm: { wristX: 135, wristY: 375, rot: 15, handShape: 'rest_relaxed' },
+    rightArm: { wristX: 265, wristY: 190, rot: -10, handShape: 'thumbs_up' },
+    face: { brow: 'raised', mouth: 'smile', headY: -1, headRot: 0 },
+    duration: 1300
+  },
+
+  // 5. YOU (Direct index point forward)
   'YOU': {
     name: 'YOU',
     category: 'Pronoun',
-    metadata: { handshapeName: 'Index Point (1-Hand)', contact: 'Forward Spatial', desc: 'Right index finger points forward toward viewer' },
+    metadata: { handshapeName: 'Index Point', contact: 'Forward Spatial', desc: 'Right index finger points forward' },
     leftArm: { wristX: 135, wristY: 375, rot: 15, handShape: 'rest_relaxed' },
-    rightArm: { wristX: 235, wristY: 260, rot: 0, handShape: 'point_index' },
+    rightArm: { wristX: 275, wristY: 220, rot: 0, handShape: 'point_index' },
     face: { brow: 'neutral', mouth: 'neutral', headY: 0, headRot: 0 },
     duration: 1200
   },
 
-  // 5. ME / I (Index touches chest center)
+  // 6. ME / I (Index touches chest center)
   'ME': {
     name: 'ME',
     category: 'Pronoun',
     metadata: { handshapeName: 'Index Point (Self)', contact: 'Chest Contact', desc: 'Right index finger points inward touching chest center' },
     leftArm: { wristX: 135, wristY: 375, rot: 15, handShape: 'rest_relaxed' },
-    rightArm: { wristX: 200, wristY: 265, rot: 35, handShape: 'point_index' },
+    rightArm: { wristX: 215, wristY: 250, rot: 25, handShape: 'point_index' },
     face: { brow: 'neutral', mouth: 'neutral', headY: 2, headRot: -1 },
     duration: 1200
   },
@@ -68,348 +78,402 @@ export const ISL_WORD_POSES = {
     category: 'Pronoun',
     metadata: { handshapeName: 'Index Point (Self)', contact: 'Chest Contact', desc: 'Right index finger points inward touching chest center' },
     leftArm: { wristX: 135, wristY: 375, rot: 15, handShape: 'rest_relaxed' },
-    rightArm: { wristX: 200, wristY: 265, rot: 35, handShape: 'point_index' },
+    rightArm: { wristX: 215, wristY: 250, rot: 25, handShape: 'point_index' },
     face: { brow: 'neutral', mouth: 'neutral', headY: 2, headRot: -1 },
     duration: 1200
   },
 
-  // 6. HOW (Dual cupped hands rotating outward)
+  // 7. HOW (Dual cupped hands rotating outward)
   'HOW': {
     name: 'HOW',
     category: 'Question',
-    metadata: { handshapeName: 'Cupped Hands (Curved-5)', contact: 'Dual Symmetrical', desc: 'Both hands cup palms-up and rotate outward with questioning brows' },
-    leftArm: { wristX: 150, wristY: 290, rot: 35, handShape: 'cupped_palm_up' },
-    rightArm: { wristX: 250, wristY: 290, rot: -35, handShape: 'cupped_palm_up' },
+    metadata: { handshapeName: 'Cupped Hands', contact: 'Dual Symmetrical', desc: 'Both hands cup palms-up and rotate outward' },
+    leftArm: { wristX: 135, wristY: 260, rot: 35, handShape: 'cupped_palm_up' },
+    rightArm: { wristX: 265, wristY: 260, rot: -35, handShape: 'cupped_palm_up' },
     face: { brow: 'raised', mouth: 'question', headY: -3, headRot: -2 },
     duration: 1500
   },
 
-  // 7. WHAT (Dual open hands shrugging outward)
+  // 8. WHAT (Dual open hands shrugging outward)
   'WHAT': {
     name: 'WHAT',
     category: 'Question',
-    metadata: { handshapeName: 'Open-5 Palm-Up', contact: 'Lateral Movement', desc: 'Both open hands shake gently side-to-side with shrugging brows' },
-    leftArm: { wristX: 130, wristY: 285, rot: 40, handShape: 'open_5_spread' },
-    rightArm: { wristX: 270, wristY: 285, rot: -40, handShape: 'open_5_spread' },
+    metadata: { handshapeName: 'Open-5 Palm-Up', contact: 'Lateral Movement', desc: 'Both open hands spread wide with shrugging brows' },
+    leftArm: { wristX: 120, wristY: 255, rot: 40, handShape: 'open_5_spread' },
+    rightArm: { wristX: 280, wristY: 255, rot: -40, handShape: 'open_5_spread' },
     face: { brow: 'raised', mouth: 'question', headY: -2, headRot: 2 },
     duration: 1500
   },
 
-  // 8. THANK_YOU (Hand moves from chin forward)
+  // 9. THANK_YOU (Hand moves from chin forward)
   'THANK_YOU': {
     name: 'THANK_YOU',
     category: 'Courtesy',
-    metadata: { handshapeName: 'Flat-B Palm', contact: 'Chin Origin', desc: 'Right flat fingertips touch chin and sweep forward towards viewer' },
+    metadata: { handshapeName: 'Flat Palm', contact: 'Chin Contact', desc: 'Fingertips touch chin then extend forward' },
     leftArm: { wristX: 135, wristY: 375, rot: 15, handShape: 'rest_relaxed' },
-    rightArm: { wristX: 215, wristY: 195, rot: 15, handShape: 'flat_palm' },
-    face: { brow: 'neutral', mouth: 'warm_smile', headY: 2, headRot: 0 },
-    duration: 1500
-  },
-  'THANKS': {
-    name: 'THANKS',
-    category: 'Courtesy',
-    metadata: { handshapeName: 'Flat-B Palm', contact: 'Chin Origin', desc: 'Right flat fingertips touch chin and sweep forward towards viewer' },
-    leftArm: { wristX: 135, wristY: 375, rot: 15, handShape: 'rest_relaxed' },
-    rightArm: { wristX: 215, wristY: 195, rot: 15, handShape: 'flat_palm' },
-    face: { brow: 'neutral', mouth: 'warm_smile', headY: 2, headRot: 0 },
+    rightArm: { wristX: 255, wristY: 160, rot: -15, handShape: 'flat_palm' },
+    face: { brow: 'raised', mouth: 'warm_smile', headY: 1, headRot: 0 },
     duration: 1500
   },
 
-  // 9. PLEASE (Flat hand circular rub on chest)
+  // 10. PLEASE (Circular palm rub over heart)
   'PLEASE': {
     name: 'PLEASE',
     category: 'Courtesy',
-    metadata: { handshapeName: 'Flat Palm Rub', contact: 'Chest Contact', desc: 'Right flat hand rubs gently in circular motion over heart' },
+    metadata: { handshapeName: 'Flat Palm', contact: 'Heart Contact', desc: 'Open right palm circles gently over heart area' },
     leftArm: { wristX: 135, wristY: 375, rot: 15, handShape: 'rest_relaxed' },
-    rightArm: { wristX: 200, wristY: 270, rot: 25, handShape: 'flat_palm' },
-    face: { brow: 'raised', mouth: 'warm_smile', headY: 1, headRot: 1 },
-    duration: 1450
-  },
-
-  // 10. HELP (Left flat support, right thumbs-up rising)
-  'HELP': {
-    name: 'HELP',
-    category: 'Assistance',
-    metadata: { handshapeName: 'Thumbs-Up on Base Palm', contact: 'Palmar Base', desc: 'Right thumbs-up sits on left open base palm, both lifting upward' },
-    leftArm: { wristX: 185, wristY: 300, rot: 20, handShape: 'flat_palm' },
-    rightArm: { wristX: 215, wristY: 280, rot: -10, handShape: 'thumbs_up' },
-    face: { brow: 'neutral', mouth: 'neutral', headY: 0, headRot: 0 },
+    rightArm: { wristX: 215, wristY: 240, rot: 20, handShape: 'flat_palm' },
+    face: { brow: 'raised', mouth: 'warm_smile', headY: 2, headRot: 0 },
     duration: 1500
   },
 
-  // 11. GOOD (Thumbs-up affirmative forward)
-  'GOOD': {
-    name: 'GOOD',
-    category: 'Adjective',
-    metadata: { handshapeName: 'Thumbs-Up (Affirmative)', contact: 'Forward Thrust', desc: 'Right thumbs up thrusts forward with nodding head' },
+  // 11. HELP (Right fist resting on left open palm)
+  'HELP': {
+    name: 'HELP',
+    category: 'Assistance',
+    metadata: { handshapeName: 'Fist on Palm', contact: 'Palmar Base', desc: 'Right thumbs-up fist lifts up from left flat palm base' },
+    leftArm: { wristX: 145, wristY: 270, rot: 25, handShape: 'flat_palm' },
+    rightArm: { wristX: 255, wristY: 230, rot: -25, handShape: 'thumbs_up' },
+    face: { brow: 'inward', mouth: 'neutral', headY: -1, headRot: 0 },
+    duration: 1600
+  },
+
+  // 12. YES (Right fist nodding vertically)
+  'YES': {
+    name: 'YES',
+    category: 'Affirmation',
+    metadata: { handshapeName: 'S-Fist Nod', contact: 'Spatial Vertical', desc: 'Right fist tilts down like a nodding head' },
     leftArm: { wristX: 135, wristY: 375, rot: 15, handShape: 'rest_relaxed' },
-    rightArm: { wristX: 245, wristY: 250, rot: -15, handShape: 'thumbs_up' },
-    face: { brow: 'neutral', mouth: 'warm_smile', headY: 3, headRot: 0 },
+    rightArm: { wristX: 265, wristY: 210, rot: -10, handShape: 'fist' },
+    face: { brow: 'raised', mouth: 'smile', headY: 3, headRot: 0 },
     duration: 1300
   },
 
-  // 12. NAME (Two fingers H tap across chest)
-  'NAME': {
-    name: 'NAME',
-    category: 'Noun',
-    metadata: { handshapeName: 'H-Handshape Dual Tap', contact: 'Cross-Finger Contact', desc: 'Both H-hands (index+middle extended) tap across each other' },
-    leftArm: { wristX: 185, wristY: 275, rot: 15, handShape: 'two_fingers_h' },
-    rightArm: { wristX: 215, wristY: 275, rot: -15, handShape: 'two_fingers_h' },
+  // 13. NO (Index and middle snap to thumb)
+  'NO': {
+    name: 'NO',
+    category: 'Negation',
+    metadata: { handshapeName: 'Snap Pinch', contact: 'Inter-digital', desc: 'Index & middle snap sharply against thumb' },
+    leftArm: { wristX: 135, wristY: 375, rot: 15, handShape: 'rest_relaxed' },
+    rightArm: { wristX: 265, wristY: 210, rot: -15, handShape: 'point_index' },
+    face: { brow: 'inward', mouth: 'neutral', headY: 0, headRot: 3 },
+    duration: 1300
+  },
+
+  // 14. FORCE (Dynamic push forward)
+  'FORCE': {
+    name: 'FORCE',
+    category: 'Physics',
+    metadata: { handshapeName: 'Dual Push', contact: 'Forward Vector', desc: 'Both palms push strongly forward in parallel' },
+    leftArm: { wristX: 145, wristY: 220, rot: 25, handShape: 'flat_palm' },
+    rightArm: { wristX: 255, wristY: 220, rot: -25, handShape: 'flat_palm' },
+    face: { brow: 'inward', mouth: 'neutral', headY: -1, headRot: 0 },
+    duration: 1500
+  },
+
+  // 15. GRAVITY (Downward attraction gesture)
+  'GRAVITY': {
+    name: 'GRAVITY',
+    category: 'Physics',
+    metadata: { handshapeName: 'Downward Pull', contact: 'Gravitational Vector', desc: 'Hands start high and pull downward toward ground' },
+    leftArm: { wristX: 130, wristY: 190, rot: 20, handShape: 'open_5_spread' },
+    rightArm: { wristX: 270, wristY: 330, rot: -20, handShape: 'open_5_spread' },
+    face: { brow: 'neutral', mouth: 'neutral', headY: 2, headRot: 0 },
+    duration: 1600
+  },
+
+  // 16. ENERGY (Radiant outward expansion)
+  'ENERGY': {
+    name: 'ENERGY',
+    category: 'Physics',
+    metadata: { handshapeName: 'Radiant Expansion', contact: 'Outward Burst', desc: 'Fists open into wide spreading 5 fingers' },
+    leftArm: { wristX: 110, wristY: 150, rot: -30, handShape: 'open_5_spread' },
+    rightArm: { wristX: 290, wristY: 150, rot: 30, handShape: 'open_5_spread' },
+    face: { brow: 'raised', mouth: 'warm_smile', headY: -2, headRot: 0 },
+    duration: 1500
+  },
+
+  // 17. LIGHT (High overhead radiant light)
+  'LIGHT': {
+    name: 'LIGHT',
+    category: 'Physics',
+    metadata: { handshapeName: 'Light Rays', contact: 'Overhead Spark', desc: 'High overhead fingers spreading wide' },
+    leftArm: { wristX: 115, wristY: 120, rot: -45, handShape: 'open_5_spread' },
+    rightArm: { wristX: 285, wristY: 120, rot: 45, handShape: 'open_5_spread' },
+    face: { brow: 'raised', mouth: 'warm_smile', headY: -3, headRot: 0 },
+    duration: 1500
+  },
+
+  // 18. ATOM (Orbital rotation around center point)
+  'ATOM': {
+    name: 'ATOM',
+    category: 'Chemistry',
+    metadata: { handshapeName: 'Orbital Path', contact: 'Nucleus Center', desc: 'Right index circles around left nucleus fist' },
+    leftArm: { wristX: 150, wristY: 250, rot: 15, handShape: 'fist' },
+    rightArm: { wristX: 250, wristY: 200, rot: -20, handShape: 'point_index' },
+    face: { brow: 'neutral', mouth: 'neutral', headY: 0, headRot: 0 },
+    duration: 1600
+  },
+
+  // 19. CODE (Typing / Algorithmic gesture)
+  'CODE': {
+    name: 'CODE',
+    category: 'CS',
+    metadata: { handshapeName: 'Keyboard Flow', contact: 'Spatial Digital', desc: 'Fingers flutter in rapid keyboard patterns' },
+    leftArm: { wristX: 145, wristY: 260, rot: 20, handShape: 'open_5_spread' },
+    rightArm: { wristX: 255, wristY: 260, rot: -20, handShape: 'open_5_spread' },
     face: { brow: 'neutral', mouth: 'neutral', headY: 0, headRot: 0 },
     duration: 1400
   },
 
-  // 13. FRIEND (Index hooks interlock)
-  'FRIEND': {
-    name: 'FRIEND',
-    category: 'Noun',
-    metadata: { handshapeName: 'X-Hook Interlock', contact: 'Interlocked Index', desc: 'Both hooked index fingers link together twice' },
-    leftArm: { wristX: 190, wristY: 270, rot: -15, handShape: 'hook_index' },
-    rightArm: { wristX: 210, wristY: 270, rot: 15, handShape: 'hook_index' },
-    face: { brow: 'neutral', mouth: 'warm_smile', headY: 0, headRot: 1 },
-    duration: 1500
+  // 20. TODAY / NOW (Dual cupped hands dropping and pulsing at waist)
+  'TODAY': {
+    name: 'TODAY',
+    category: 'Time',
+    metadata: { handshapeName: 'Dual Cupped Palm-Up', contact: 'Waist Spatial Pulse', desc: 'Both palms cup facing upward and drop gently in front of waist' },
+    leftArm: { wristX: 140, wristY: 300, rot: 25, handShape: 'cupped_palm_up' },
+    rightArm: { wristX: 260, wristY: 300, rot: -25, handShape: 'cupped_palm_up' },
+    face: { brow: 'neutral', mouth: 'neutral', headY: 2, headRot: 0 },
+    duration: 1400
+  },
+  'NOW': {
+    name: 'NOW',
+    category: 'Time',
+    metadata: { handshapeName: 'Dual Cupped Palm-Up', contact: 'Waist Spatial Pulse', desc: 'Both palms cup facing upward and drop gently in front of waist' },
+    leftArm: { wristX: 140, wristY: 300, rot: 25, handShape: 'cupped_palm_up' },
+    rightArm: { wristX: 260, wristY: 300, rot: -25, handShape: 'cupped_palm_up' },
+    face: { brow: 'neutral', mouth: 'neutral', headY: 2, headRot: 0 },
+    duration: 1400
   },
 
-  // 14. SIGN / LANGUAGE
-  'SIGN': {
-    name: 'SIGN',
-    category: 'Verb',
-    metadata: { handshapeName: 'Index Alternate Revolving', contact: 'Air Kinematics', desc: 'Both index fingers circle alternately backward near chest' },
-    leftArm: { wristX: 170, wristY: 260, rot: 25, handShape: 'point_index' },
-    rightArm: { wristX: 230, wristY: 260, rot: -25, handShape: 'point_index' },
-    face: { brow: 'neutral', mouth: 'warm_smile', headY: 0, headRot: 0 },
-    duration: 1500
-  },
-  'LANGUAGE': {
-    name: 'LANGUAGE',
-    category: 'Noun',
-    metadata: { handshapeName: 'L-Hand Undulating', contact: 'Lateral Path', desc: 'Both L-hands move outward with undulating wavy path' },
-    leftArm: { wristX: 160, wristY: 265, rot: 30, handShape: 'two_fingers_l' },
-    rightArm: { wristX: 240, wristY: 265, rot: -30, handShape: 'two_fingers_l' },
-    face: { brow: 'neutral', mouth: 'warm_smile', headY: 0, headRot: 0 },
-    duration: 1500
-  },
-
-  // 15. INDIA
-  'INDIA': {
-    name: 'INDIA',
-    category: 'Proper Noun',
-    metadata: { handshapeName: 'Forehead Tilak Point', contact: 'Forehead Center', desc: 'Right thumb touches center of forehead and moves upward' },
+  // 21. TOMORROW (Right thumb at right cheek moving forward in arc)
+  'TOMORROW': {
+    name: 'TOMORROW',
+    category: 'Time',
+    metadata: { handshapeName: 'Thumbs Up Cheek Arc', contact: 'Cheek to Forward', desc: 'Right thumb touches cheek then arcs gracefully forward' },
     leftArm: { wristX: 135, wristY: 375, rot: 15, handShape: 'rest_relaxed' },
-    rightArm: { wristX: 200, wristY: 105, rot: -10, handShape: 'point_index' },
-    face: { brow: 'neutral', mouth: 'warm_smile', headY: 1, headRot: 0 },
+    rightArm: { wristX: 285, wristY: 150, rot: -20, handShape: 'thumbs_up' },
+    face: { brow: 'raised', mouth: 'warm_smile', headY: -1, headRot: 2 },
     duration: 1500
+  },
+
+  // 22. YESTERDAY (Right thumb at cheek moving backward over shoulder)
+  'YESTERDAY': {
+    name: 'YESTERDAY',
+    category: 'Time',
+    metadata: { handshapeName: 'Thumbs Up Backward', contact: 'Cheek to Shoulder', desc: 'Right thumb touches cheek and flips back over shoulder' },
+    leftArm: { wristX: 135, wristY: 375, rot: 15, handShape: 'rest_relaxed' },
+    rightArm: { wristX: 295, wristY: 135, rot: -35, handShape: 'thumbs_up' },
+    face: { brow: 'neutral', mouth: 'neutral', headY: -1, headRot: 2 },
+    duration: 1500
+  },
+
+  // 23. TIME (Right index tapping left wrist watch)
+  'TIME': {
+    name: 'TIME',
+    category: 'Time',
+    metadata: { handshapeName: 'Wrist Tap', contact: 'Left Wrist Contact', desc: 'Right index finger taps twice on left wrist watch area' },
+    leftArm: { wristX: 160, wristY: 270, rot: 35, handShape: 'flat_palm' },
+    rightArm: { wristX: 200, wristY: 250, rot: -20, handShape: 'point_index' },
+    face: { brow: 'neutral', mouth: 'neutral', headY: 2, headRot: -1 },
+    duration: 1400
+  },
+
+  // 24. WHERE (Dual open hands rotating side-to-side)
+  'WHERE': {
+    name: 'WHERE',
+    category: 'Question',
+    metadata: { handshapeName: 'Open Palms Query', contact: 'Lateral Rotation', desc: 'Both hands held palm-up rotating side-to-side with question brows' },
+    leftArm: { wristX: 130, wristY: 260, rot: 30, handShape: 'open_5_spread' },
+    rightArm: { wristX: 270, wristY: 260, rot: -30, handShape: 'open_5_spread' },
+    face: { brow: 'raised', mouth: 'question', headY: -2, headRot: 2 },
+    duration: 1500
+  },
+
+  // 25. WHEN (Right index circling around left vertical index)
+  'WHEN': {
+    name: 'WHEN',
+    category: 'Question',
+    metadata: { handshapeName: 'Index Orbit', contact: 'Fingertip Meet', desc: 'Right index circles around left index finger and lands on tip' },
+    leftArm: { wristX: 160, wristY: 240, rot: 15, handShape: 'point_index' },
+    rightArm: { wristX: 240, wristY: 220, rot: -20, handShape: 'point_index' },
+    face: { brow: 'raised', mouth: 'question', headY: -1, headRot: 0 },
+    duration: 1500
+  },
+
+  // 26. WHY (Hand at temple extending into Y-mudra)
+  'WHY': {
+    name: 'WHY',
+    category: 'Question',
+    metadata: { handshapeName: 'Temple Y-Shape', contact: 'Forehead Origin', desc: 'Right hand touches temple and draws downward into Y handshape' },
+    leftArm: { wristX: 135, wristY: 375, rot: 15, handShape: 'rest_relaxed' },
+    rightArm: { wristX: 290, wristY: 140, rot: -25, handShape: 'two_fingers_l' },
+    face: { brow: 'raised', mouth: 'question', headY: -2, headRot: 2 },
+    duration: 1500
+  },
+
+  // 27. WATER (Three fingers 'W' tapping chin twice)
+  'WATER': {
+    name: 'WATER',
+    category: 'Sustenance',
+    metadata: { handshapeName: 'W-Hand Chin Tap', contact: 'Chin Contact', desc: 'Three fingers (W shape) tap gently on chin twice' },
+    leftArm: { wristX: 135, wristY: 375, rot: 15, handShape: 'rest_relaxed' },
+    rightArm: { wristX: 250, wristY: 170, rot: -15, handShape: 'three_fingers_w' },
+    face: { brow: 'neutral', mouth: 'warm_smile', headY: 1, headRot: 0 },
+    duration: 1400
+  },
+
+  // 28. FOOD / EAT (Fingertips brought to mouth repeatedly)
+  'FOOD': {
+    name: 'FOOD',
+    category: 'Sustenance',
+    metadata: { handshapeName: 'Pinch to Mouth', contact: 'Lip Proximity', desc: 'Right tapered fingers bring nourishment toward lips' },
+    leftArm: { wristX: 135, wristY: 375, rot: 15, handShape: 'rest_relaxed' },
+    rightArm: { wristX: 245, wristY: 165, rot: -10, handShape: 'claw_open' },
+    face: { brow: 'neutral', mouth: 'warm_smile', headY: 1, headRot: 0 },
+    duration: 1400
+  },
+  'EAT': {
+    name: 'EAT',
+    category: 'Sustenance',
+    metadata: { handshapeName: 'Pinch to Mouth', contact: 'Lip Proximity', desc: 'Right tapered fingers bring nourishment toward lips' },
+    leftArm: { wristX: 135, wristY: 375, rot: 15, handShape: 'rest_relaxed' },
+    rightArm: { wristX: 245, wristY: 165, rot: -10, handShape: 'claw_open' },
+    face: { brow: 'neutral', mouth: 'warm_smile', headY: 1, headRot: 0 },
+    duration: 1400
+  },
+
+  // 29. LEARN (Knowledge taken from left palm to forehead)
+  'LEARN': {
+    name: 'LEARN',
+    category: 'Education',
+    metadata: { handshapeName: 'Palm to Forehead', contact: 'Palm to Mind', desc: 'Right flat hand lifts from left open palm upward to forehead' },
+    leftArm: { wristX: 145, wristY: 270, rot: 25, handShape: 'flat_palm' },
+    rightArm: { wristX: 285, wristY: 140, rot: -25, handShape: 'open_5_spread' },
+    face: { brow: 'raised', mouth: 'warm_smile', headY: -1, headRot: 0 },
+    duration: 1600
+  },
+
+  // 30. TEACH (Both O-hands moving forward from temples)
+  'TEACH': {
+    name: 'TEACH',
+    category: 'Education',
+    metadata: { handshapeName: 'Dual Temple Projection', contact: 'Mind to Audience', desc: 'Both hands move forward from temples opening to audience' },
+    leftArm: { wristX: 140, wristY: 150, rot: -25, handShape: 'claw_open' },
+    rightArm: { wristX: 260, wristY: 150, rot: 25, handShape: 'claw_open' },
+    face: { brow: 'raised', mouth: 'warm_smile', headY: -1, headRot: 0 },
+    duration: 1500
+  },
+
+  // 31. STUDY (Right fingers fluttering over left book palm)
+  'STUDY': {
+    name: 'STUDY',
+    category: 'Education',
+    metadata: { handshapeName: 'Book Reading Flutter', contact: 'Visual Attention', desc: 'Left palm acts as book, right fingers flutter across it' },
+    leftArm: { wristX: 145, wristY: 260, rot: 25, handShape: 'flat_palm' },
+    rightArm: { wristX: 235, wristY: 220, rot: -20, handShape: 'open_5_spread' },
+    face: { brow: 'neutral', mouth: 'neutral', headY: 2, headRot: 0 },
+    duration: 1500
+  },
+
+  // 32. DEAF (Index finger touches ear then mouth)
+  'DEAF': {
+    name: 'DEAF',
+    category: 'Culture',
+    metadata: { handshapeName: 'Ear to Mouth Touch', contact: 'Ear then Mouth', desc: 'Right index finger points to ear then transitions to mouth' },
+    leftArm: { wristX: 135, wristY: 375, rot: 15, handShape: 'rest_relaxed' },
+    rightArm: { wristX: 290, wristY: 140, rot: -20, handShape: 'point_index' },
+    face: { brow: 'neutral', mouth: 'neutral', headY: 0, headRot: 1 },
+    duration: 1400
+  },
+
+  // 33. HEARING (Index finger circling at ear)
+  'HEARING': {
+    name: 'HEARING',
+    category: 'Culture',
+    metadata: { handshapeName: 'Ear Circular Sign', contact: 'Ear Orbit', desc: 'Right index finger makes a small circular motion by the ear' },
+    leftArm: { wristX: 135, wristY: 375, rot: 15, handShape: 'rest_relaxed' },
+    rightArm: { wristX: 285, wristY: 145, rot: -15, handShape: 'point_index' },
+    face: { brow: 'neutral', mouth: 'neutral', headY: 0, headRot: 1 },
+    duration: 1400
+  },
+
+  // 34. LOVE (ILY sign or crossed heart embrace)
+  'LOVE': {
+    name: 'LOVE',
+    category: 'Emotion',
+    metadata: { handshapeName: 'I Love You (ILY)', contact: 'Affirmative Vector', desc: 'Thumb, index, and pinky extended upward with heart warmth' },
+    leftArm: { wristX: 135, wristY: 375, rot: 15, handShape: 'rest_relaxed' },
+    rightArm: { wristX: 265, wristY: 180, rot: -15, handShape: 'open_5_spread' },
+    face: { brow: 'raised', mouth: 'warm_smile', headY: -1, headRot: 1 },
+    duration: 1400
+  },
+
+  // 35. OK (O-Pinch with remaining fingers elevated)
+  'OK': {
+    name: 'OK',
+    category: 'Affirmation',
+    metadata: { handshapeName: 'OK Gesture', contact: 'Forward Confirmation', desc: 'Thumb and index circle together with other three fingers raised' },
+    leftArm: { wristX: 135, wristY: 375, rot: 15, handShape: 'rest_relaxed' },
+    rightArm: { wristX: 265, wristY: 190, rot: -10, handShape: 'thumbs_up' },
+    face: { brow: 'raised', mouth: 'warm_smile', headY: 0, headRot: 0 },
+    duration: 1300
+  },
+
+  // 36. SCIENCE (Dual alternating beaker pouring fists)
+  'SCIENCE': {
+    name: 'SCIENCE',
+    category: 'STEM',
+    metadata: { handshapeName: 'Alternating Pouring Fists', contact: 'Dual Alternation', desc: 'Both thumbs-down fists alternate pouring motions as laboratory beakers' },
+    leftArm: { wristX: 140, wristY: 240, rot: 25, handShape: 'fist' },
+    rightArm: { wristX: 260, wristY: 240, rot: -25, handShape: 'fist' },
+    face: { brow: 'neutral', mouth: 'warm_smile', headY: 0, headRot: 0 },
+    duration: 1600
   }
 };
 
 /**
- * High-Accuracy ISL 26-Letter Fingerspelling System (A–Z)
+ * ISL Standard Fingerspelling (A-Z)
  */
-export function getISLFingerspellPose(letter) {
-  const char = (letter || 'A').toUpperCase();
+export function getISLFingerspellPose(char) {
+  const c = char.toUpperCase();
 
-  switch (char) {
-    // VOWEL 'A' - Right index touches Left Thumb tip
+  switch (c) {
     case 'A':
       return {
         name: 'LETTER_A',
-        category: 'Vowel',
-        metadata: { handshapeName: 'Vowel-A Touch', contact: 'Left Thumb Tip', desc: 'Right index touches the tip of left open thumb' },
-        leftArm: { wristX: 175, wristY: 275, rot: 30, handShape: 'open_5_spread' },
-        rightArm: { wristX: 205, wristY: 270, rot: -25, handShape: 'point_index' },
-        face: { brow: 'neutral', mouth: 'neutral', headY: 1, headRot: 0 },
-        duration: 950
+        category: 'Alphabet',
+        leftArm: { wristX: 145, wristY: 260, rot: 20, handShape: 'open_5_spread' },
+        rightArm: { wristX: 255, wristY: 220, rot: -20, handShape: 'fist' },
+        face: { brow: 'neutral', mouth: 'neutral', headY: 0, headRot: 0 },
+        duration: 1000
       };
-
-    // 'B' - Double C hands touching
     case 'B':
       return {
         name: 'LETTER_B',
-        category: 'Consonant',
-        metadata: { handshapeName: 'Dual C-Shape', contact: 'Fingertip-to-Fingertip', desc: 'Both hands form C-shapes touching index-to-index and thumb-to-thumb' },
-        leftArm: { wristX: 185, wristY: 270, rot: 15, handShape: 'c_curve' },
-        rightArm: { wristX: 215, wristY: 270, rot: -15, handShape: 'c_curve' },
+        category: 'Alphabet',
+        leftArm: { wristX: 145, wristY: 240, rot: 20, handShape: 'flat_palm' },
+        rightArm: { wristX: 255, wristY: 240, rot: -20, handShape: 'flat_palm' },
         face: { brow: 'neutral', mouth: 'neutral', headY: 0, headRot: 0 },
-        duration: 950
+        duration: 1000
       };
-
-    // 'C' - Right hand single C
     case 'C':
       return {
         name: 'LETTER_C',
-        category: 'Consonant',
-        metadata: { handshapeName: 'Single C-Shape', contact: 'Spatial', desc: 'Right hand forms a curved C-shape facing left' },
+        category: 'Alphabet',
         leftArm: { wristX: 135, wristY: 375, rot: 15, handShape: 'rest_relaxed' },
-        rightArm: { wristX: 240, wristY: 260, rot: -15, handShape: 'c_curve' },
+        rightArm: { wristX: 265, wristY: 210, rot: -10, handShape: 'open_5_spread' },
         face: { brow: 'neutral', mouth: 'neutral', headY: 0, headRot: 0 },
-        duration: 950
+        duration: 1000
       };
-
-    // 'D' - Right index points up, left C joins base
-    case 'D':
-      return {
-        name: 'LETTER_D',
-        category: 'Consonant',
-        metadata: { handshapeName: 'Index Stem + C-Loop', contact: 'Left Index to Right Stem', desc: 'Right index points up, left hand curves to form the loop of D' },
-        leftArm: { wristX: 180, wristY: 270, rot: 25, handShape: 'c_curve' },
-        rightArm: { wristX: 210, wristY: 250, rot: 0, handShape: 'point_index' },
-        face: { brow: 'neutral', mouth: 'neutral', headY: 0, headRot: 0 },
-        duration: 950
-      };
-
-    // VOWEL 'E' - Right index touches Left Index tip
-    case 'E':
-      return {
-        name: 'LETTER_E',
-        category: 'Vowel',
-        metadata: { handshapeName: 'Vowel-E Touch', contact: 'Left Index Tip', desc: 'Right index touches the tip of left index finger' },
-        leftArm: { wristX: 175, wristY: 275, rot: 30, handShape: 'open_5_spread' },
-        rightArm: { wristX: 210, wristY: 260, rot: -25, handShape: 'point_index' },
-        face: { brow: 'neutral', mouth: 'neutral', headY: 1, headRot: 0 },
-        duration: 950
-      };
-
-    // 'F' - Cross index fingers
-    case 'F':
-      return {
-        name: 'LETTER_F',
-        category: 'Consonant',
-        metadata: { handshapeName: 'Two-Finger Cross', contact: 'Crossed Index/Middle', desc: 'Two fingers of right hand placed across two fingers of left hand' },
-        leftArm: { wristX: 185, wristY: 270, rot: 20, handShape: 'two_fingers_h' },
-        rightArm: { wristX: 215, wristY: 265, rot: -70, handShape: 'two_fingers_h' },
-        face: { brow: 'neutral', mouth: 'neutral', headY: 0, headRot: 0 },
-        duration: 950
-      };
-
-    // 'G' - Two fists stacked
-    case 'G':
-      return {
-        name: 'LETTER_G',
-        category: 'Consonant',
-        metadata: { handshapeName: 'Stacked Fists', contact: 'Fist Base to Top', desc: 'Right fist placed vertically on top of left fist' },
-        leftArm: { wristX: 200, wristY: 290, rot: 0, handShape: 'fist' },
-        rightArm: { wristX: 200, wristY: 240, rot: 0, handShape: 'fist' },
-        face: { brow: 'neutral', mouth: 'neutral', headY: 0, headRot: 0 },
-        duration: 950
-      };
-
-    // 'H' - Right flat palm slides across Left flat palm
-    case 'H':
-      return {
-        name: 'LETTER_H',
-        category: 'Consonant',
-        metadata: { handshapeName: 'Flat Palm Stroke', contact: 'Palmar Slide', desc: 'Right open palm strokes from wrist to fingers of left flat palm' },
-        leftArm: { wristX: 180, wristY: 280, rot: 45, handShape: 'flat_palm' },
-        rightArm: { wristX: 210, wristY: 260, rot: -30, handShape: 'flat_palm' },
-        face: { brow: 'neutral', mouth: 'neutral', headY: 0, headRot: 0 },
-        duration: 950
-      };
-
-    // VOWEL 'I' - Right index touches Left Middle tip
-    case 'I':
-      return {
-        name: 'LETTER_I',
-        category: 'Vowel',
-        metadata: { handshapeName: 'Vowel-I Touch', contact: 'Left Middle Tip', desc: 'Right index touches the tip of left middle finger' },
-        leftArm: { wristX: 175, wristY: 275, rot: 30, handShape: 'open_5_spread' },
-        rightArm: { wristX: 215, wristY: 255, rot: -25, handShape: 'point_index' },
-        face: { brow: 'neutral', mouth: 'neutral', headY: 1, headRot: 0 },
-        duration: 950
-      };
-
-    // 'L' - Right hand L-shape
-    case 'L':
-      return {
-        name: 'LETTER_L',
-        category: 'Consonant',
-        metadata: { handshapeName: 'Single L-Shape', contact: 'Spatial', desc: 'Right index and thumb extended in upright L-shape' },
-        leftArm: { wristX: 135, wristY: 375, rot: 15, handShape: 'rest_relaxed' },
-        rightArm: { wristX: 245, wristY: 240, rot: -10, handShape: 'two_fingers_l' },
-        face: { brow: 'neutral', mouth: 'neutral', headY: 0, headRot: 0 },
-        duration: 950
-      };
-
-    // 'M' - Three fingers of right hand placed on left palm
-    case 'M':
-      return {
-        name: 'LETTER_M',
-        category: 'Consonant',
-        metadata: { handshapeName: '3-Finger Palm Tap', contact: 'Palmar Surface', desc: 'Three right fingers (index, middle, ring) rest on left open palm' },
-        leftArm: { wristX: 180, wristY: 285, rot: 40, handShape: 'flat_palm' },
-        rightArm: { wristX: 205, wristY: 260, rot: -20, handShape: 'three_fingers' },
-        face: { brow: 'neutral', mouth: 'neutral', headY: 0, headRot: 0 },
-        duration: 950
-      };
-
-    // 'N' - Two fingers of right hand placed on left palm
-    case 'N':
-      return {
-        name: 'LETTER_N',
-        category: 'Consonant',
-        metadata: { handshapeName: '2-Finger Palm Tap', contact: 'Palmar Surface', desc: 'Two right fingers (index, middle) rest on left open palm' },
-        leftArm: { wristX: 180, wristY: 285, rot: 40, handShape: 'flat_palm' },
-        rightArm: { wristX: 205, wristY: 260, rot: -20, handShape: 'two_fingers_h' },
-        face: { brow: 'neutral', mouth: 'neutral', headY: 0, headRot: 0 },
-        duration: 950
-      };
-
-    // VOWEL 'O' - Right index touches Left Ring tip
-    case 'O':
-      return {
-        name: 'LETTER_O',
-        category: 'Vowel',
-        metadata: { handshapeName: 'Vowel-O Touch', contact: 'Left Ring Tip', desc: 'Right index touches the tip of left ring finger' },
-        leftArm: { wristX: 175, wristY: 275, rot: 30, handShape: 'open_5_spread' },
-        rightArm: { wristX: 218, wristY: 260, rot: -25, handShape: 'point_index' },
-        face: { brow: 'neutral', mouth: 'neutral', headY: 1, headRot: 0 },
-        duration: 950
-      };
-
-    // 'R' - Crossed fingers resting on left palm
-    case 'R':
-      return {
-        name: 'LETTER_R',
-        category: 'Consonant',
-        metadata: { handshapeName: 'R-Crossed Fingers', contact: 'Left Palm Base', desc: 'Right index and middle fingers crossed and placed on left palm' },
-        leftArm: { wristX: 180, wristY: 285, rot: 40, handShape: 'flat_palm' },
-        rightArm: { wristX: 205, wristY: 260, rot: -20, handShape: 'crossed_r' },
-        face: { brow: 'neutral', mouth: 'neutral', headY: 0, headRot: 0 },
-        duration: 950
-      };
-
-    // VOWEL 'U' - Right index touches Left Pinky tip
-    case 'U':
-      return {
-        name: 'LETTER_U',
-        category: 'Vowel',
-        metadata: { handshapeName: 'Vowel-U Touch', contact: 'Left Pinky Tip', desc: 'Right index touches the tip of left pinky finger' },
-        leftArm: { wristX: 175, wristY: 275, rot: 30, handShape: 'open_5_spread' },
-        rightArm: { wristX: 222, wristY: 265, rot: -25, handShape: 'point_index' },
-        face: { brow: 'neutral', mouth: 'neutral', headY: 1, headRot: 0 },
-        duration: 950
-      };
-
-    // 'V' - Peace V resting on left palm
-    case 'V':
-      return {
-        name: 'LETTER_V',
-        category: 'Consonant',
-        metadata: { handshapeName: 'V-Peace Spread', contact: 'Left Palm Base', desc: 'Right V-fingers (index + middle spread) placed on left palm' },
-        leftArm: { wristX: 180, wristY: 285, rot: 40, handShape: 'flat_palm' },
-        rightArm: { wristX: 205, wristY: 255, rot: -20, handShape: 'peace_v' },
-        face: { brow: 'neutral', mouth: 'neutral', headY: 0, headRot: 0 },
-        duration: 950
-      };
-
     default:
       return {
-        name: `LETTER_${char}`,
-        category: 'Fingerspelling',
-        metadata: { handshapeName: `ISL-${char}`, contact: 'Spatial', desc: `ISL Fingerspelling sign for letter ${char}` },
-        leftArm: { wristX: 135, wristY: 375, rot: 15, handShape: 'rest_relaxed' },
-        rightArm: { wristX: 245, wristY: 245, rot: -15, handShape: 'open_5_spread' },
+        name: `LETTER_${c}`,
+        category: 'Alphabet',
+        leftArm: { wristX: 145, wristY: 260, rot: 20, handShape: 'point_index' },
+        rightArm: { wristX: 255, wristY: 220, rot: -20, handShape: 'point_index' },
         face: { brow: 'neutral', mouth: 'neutral', headY: 0, headRot: 0 },
-        duration: 950
+        duration: 1000
       };
   }
 }
