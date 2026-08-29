@@ -23,6 +23,7 @@ Thumbs.db
 *.zip
 *.tar.gz
 datasets/
+public/motions/
 hamnosys_pkls_default_shape.zip
 hamnosys_pkls_default_shape/
 human_model_files/
