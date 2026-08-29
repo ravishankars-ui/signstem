@@ -13,22 +13,56 @@ function postToContentScript(msg) {
 }
 
 const EXTENDED_GESTURES = [
-  { key: 'NAMASTE', label: 'Namaste', category: 'Greetings', emoji: '🙏', desc: 'Both palms pressed flat together at chest center' },
-  { key: 'HELLO', label: 'Hello (Open Palm)', category: 'Greetings', emoji: '✋', desc: 'Open palm facing forward waving gently at eye height' },
-  { key: 'GOOD', label: 'Good (Thumbs Up)', category: 'Courtesy', emoji: '👍', desc: 'Closed fist with thumb upright and firm' },
-  { key: 'LOVE', label: 'Love (🤟 ILY)', category: 'Emotion', emoji: '🤟', desc: 'Thumb, index, and pinky extended with middle/ring folded' },
-  { key: 'OK', label: 'OK (👌)', category: 'Courtesy', emoji: '👌', desc: 'Thumb and index forming an O with remaining fingers raised' },
-  { key: 'GRAVITY', label: 'Gravity (Down Force)', category: 'Physics & STEM', emoji: '⬇️', desc: 'Index pointing directly downwards representing gravity' },
-  { key: 'ATOM', label: 'Atom & Nucleus', category: 'Physics & STEM', emoji: '⚛️', desc: 'Pinched nucleus fingers with revolving hand orbit' },
-  { key: 'ENERGY', label: 'Energy & Work', category: 'Physics & STEM', emoji: '⚡', desc: 'Pulsing open hand moving outwards from torso' },
-  { key: 'EQUAL', label: 'Equal Sign (=)', category: 'Mathematics', emoji: '🟰', desc: 'Both index fingers held horizontal and parallel' },
-  { key: 'CODE', label: 'Computer Code', category: 'Computer Sci', emoji: '💻', desc: 'Rapid tapping fingers mimicking keyboard typing' },
-  { key: 'ONE', label: 'Number 1 / Point', category: 'Numbers', emoji: '☝️', desc: 'Single index finger extended upright' },
-  { key: 'TWO', label: 'Number 2 / Victory', category: 'Numbers', emoji: '✌️', desc: 'Index and middle fingers extended in a V' },
-  { key: 'THREE', label: 'Number 3 / W', category: 'Numbers', emoji: '🖖', desc: 'Index, middle, and ring fingers extended' },
-  { key: 'FOUR', label: 'Number 4', category: 'Numbers', emoji: '🖐️', desc: 'Four fingers upright with thumb tucked in' },
+  // Numbers 0 to 10, 20
+  { key: 'ZERO', label: 'Number 0 (Zero)', category: 'Numbers', emoji: '0️⃣', desc: 'All fingertips curved inward to touch thumb forming an O' },
+  { key: 'ONE', label: 'Number 1 / Point', category: 'Numbers', emoji: '1️⃣', desc: 'Single index finger extended straight upright' },
+  { key: 'TWO', label: 'Number 2 / Peace (V)', category: 'Numbers', emoji: '2️⃣', desc: 'Index and middle fingers extended in a V shape' },
+  { key: 'THREE', label: 'Number 3 / W', category: 'Numbers', emoji: '3️⃣', desc: 'Index, middle, and ring fingers extended upright' },
+  { key: 'FOUR', label: 'Number 4', category: 'Numbers', emoji: '4️⃣', desc: 'Four fingers upright with thumb tucked in across palm' },
+  { key: 'HELLO', label: 'Number 5 / Open Palm', category: 'Numbers', emoji: '5️⃣', desc: 'All 5 fingers fully extended and spread' },
+  { key: 'SIX', label: 'Number 6', category: 'Numbers', emoji: '6️⃣', desc: 'Thumb touching pinky tip with remaining 3 fingers upright' },
+  { key: 'SEVEN', label: 'Number 7', category: 'Numbers', emoji: '7️⃣', desc: 'Thumb touching ring tip with remaining 3 fingers upright' },
+  { key: 'EIGHT', label: 'Number 8', category: 'Numbers', emoji: '8️⃣', desc: 'Thumb touching middle tip with remaining 3 fingers upright' },
+  { key: 'NINE', label: 'Number 9', category: 'Numbers', emoji: '9️⃣', desc: 'Thumb touching index tip with remaining 3 fingers upright' },
+  { key: 'TEN', label: 'Number 10 / 20', category: 'Numbers', emoji: '🔟', desc: 'Both hands open with all 10 fingers extended' },
+
+  // Alphabet ISL Fingerspelling (A to Z)
+  { key: 'LETTER_A', label: 'Letter A', category: 'Alphabet', emoji: '🅰️', desc: 'Closed fist with thumb extended vertically alongside index finger' },
+  { key: 'LETTER_B', label: 'Letter B', category: 'Alphabet', emoji: '🅱️', desc: '4 fingers flat together straight up, thumb tucked across palm' },
+  { key: 'LETTER_C', label: 'Letter C', category: 'Alphabet', emoji: '©️', desc: 'All fingers curved in a smooth C-shaped arc' },
+  { key: 'LETTER_D', label: 'Letter D', category: 'Alphabet', emoji: '🇩', desc: 'Index finger straight up, other fingers forming an O loop with thumb' },
+  { key: 'LETTER_E', label: 'Letter E', category: 'Alphabet', emoji: '🇪', desc: 'All 4 fingertips curled tight resting on thumb pad' },
+  { key: 'LETTER_F', label: 'Letter F (👌)', category: 'Alphabet', emoji: '🇫', desc: 'Index and thumb forming a circle, middle, ring, pinky extended' },
+  { key: 'LETTER_G', label: 'Letter G', category: 'Alphabet', emoji: '🇬', desc: 'Index finger pointing horizontally forward with thumb parallel' },
+  { key: 'LETTER_H', label: 'Letter H', category: 'Alphabet', emoji: '🇭', desc: 'Index and middle fingers extended horizontally together' },
+  { key: 'LETTER_I', label: 'Letter I', category: 'Alphabet', emoji: 'ℹ️', desc: 'Pinky finger extended straight upright, other fingers folded' },
+  { key: 'LETTER_K', label: 'Letter K', category: 'Alphabet', emoji: '🇰', desc: 'Index upright, middle forward, thumb resting between them' },
   { key: 'LETTER_L', label: 'Letter L', category: 'Alphabet', emoji: '🇱', desc: 'Thumb and index extended at a right 90° angle' },
-  { key: 'LETTER_Y', label: 'Letter Y / Phone', category: 'Alphabet', emoji: '🤙', desc: 'Thumb and pinky extended with middle 3 fingers curled' },
+  { key: 'LETTER_P', label: 'Letter P', category: 'Alphabet', emoji: '🇵', desc: 'Downward angled K shape with index pointing down' },
+  { key: 'LETTER_R', label: 'Letter R', category: 'Alphabet', emoji: '🤞', desc: 'Index and middle fingers crossed over each other' },
+  { key: 'LETTER_U', label: 'Letter U', category: 'Alphabet', emoji: '🇺', desc: 'Index and middle fingers held close together upright' },
+  { key: 'TWO', label: 'Letter V', category: 'Alphabet', emoji: '✌️', desc: 'Index and middle fingers extended apart in a V shape' },
+  { key: 'THREE', label: 'Letter W', category: 'Alphabet', emoji: '🖖', desc: 'Index, middle, and ring fingers spread apart in a W shape' },
+  { key: 'LETTER_X', label: 'Letter X', category: 'Alphabet', emoji: '❌', desc: 'Index finger hooked/curled with remaining fingers in fist' },
+  { key: 'LETTER_Y', label: 'Letter Y', category: 'Alphabet', emoji: '🤙', desc: 'Thumb and pinky extended with middle 3 fingers curled' },
+  { key: 'YES', label: 'Letter S / Fist', category: 'Alphabet', emoji: '✊', desc: 'Tight closed fist with thumb wrapped across front of fingers' },
+
+  // Greetings & Core Expressions
+  { key: 'NAMASTE', label: 'Namaste', category: 'Greetings', emoji: '🙏', desc: 'Both palms pressed flat together at chest center' },
+  { key: 'GOOD', label: 'Good / Super (👍)', category: 'Courtesy', emoji: '👍', desc: 'Closed fist with thumb upright and firm' },
+  { key: 'BAD', label: 'Bad / Down (👎)', category: 'Courtesy', emoji: '👎', desc: 'Closed fist with thumb pointing down below wrist' },
+  { key: 'OK', label: 'OK / Perfect (👌)', category: 'Courtesy', emoji: '👌', desc: 'Thumb and index forming an O with remaining fingers raised' },
+  { key: 'HELP', label: 'Help / Support', category: 'Courtesy', emoji: '🤝', desc: 'One flat hand supporting the other' },
+  { key: 'LOVE', label: 'Love (🤟 ILY)', category: 'Emotion', emoji: '🤟', desc: 'Thumb, index, and pinky extended with middle/ring folded' },
+  { key: 'ROCK', label: 'Rock (🤘)', category: 'Expression', emoji: '🤘', desc: 'Index and pinky extended with thumb folded' },
+
+  // STEM & Sciences
+  { key: 'GRAVITY', label: 'Gravity (Down Force)', category: 'Physics & STEM', emoji: '⬇️', desc: 'Index pointing directly downwards representing gravity' },
+  { key: 'EQUAL', label: 'Equal Sign (=)', category: 'Mathematics', emoji: '🟰', desc: 'Both index fingers held horizontal and parallel' },
+  { key: 'ADD', label: 'Addition / Plus (+)', category: 'Mathematics', emoji: '➕', desc: 'Crossed index fingers forming a plus math sign' },
+  { key: 'CODE', label: 'Computer Code', category: 'Computer Sci', emoji: '💻', desc: 'Both hands typing in programming posture' },
+  { key: 'DATA', label: 'Data & Network', category: 'Computer Sci', emoji: '🌐', desc: 'Fingertips of both hands touching together' },
+  { key: 'ATOM', label: 'Atom & Molecule', category: 'Physics & STEM', emoji: '⚛️', desc: 'Curved finger arc forming orbital ring' },
 ];
 
 export function LiveRecognitionPanel() {

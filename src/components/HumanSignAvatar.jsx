@@ -1,12 +1,13 @@
 import React from 'react';
-import { RealisticHumanAvatar } from './HumanSignAvatar/RealisticHumanAvatar';
+import { Player } from './Player';
 
 /**
- * Human 2D Sign Language Avatar Component
- * Wrapper around RealisticHumanAvatar for backwards compatibility across pages.
+ * 3D Human Sign Language Avatar Component
+ * Wrapper around 3D Player for backwards compatibility across pages.
  */
 export function HumanSignAvatar(props) {
-  return <RealisticHumanAvatar {...props} />;
+  return <Player {...props} />;
 }
 
 export default HumanSignAvatar;
+

@@ -26,7 +26,7 @@ function getAssetUrl(relativePath) {
 /**
  * 30-Joint Articulated Finger Kinematics for Ready Player Me Avatar
  */
-function applyFingerShape(bones, prefix, shapeKey, sf, elapsed = 0) {
+function applyFingerShape(bones, prefix, shapeKey, sf, elapsed = 0, isMotionPaused = false) {
   const shape = MANO_HAND_SHAPES[shapeKey] || MANO_HAND_SHAPES['rest_poised'] || MANO_HAND_SHAPES['rest_relaxed'];
   if (!shape) return;
   const isRight = prefix.startsWith('Right');
@@ -43,7 +43,7 @@ function applyFingerShape(bones, prefix, shapeKey, sf, elapsed = 0) {
   fingerConfigs.forEach((cfg, idx) => {
     const angles = shape[cfg.name] || [0.3, 0.3, 0.2];
     const [b1, b2, b3] = cfg.b;
-    const flutter = Math.sin(elapsed * 4.8 + idx * 1.1) * 0.015;
+    const flutter = isMotionPaused ? 0 : Math.sin(elapsed * 4.8 + idx * 1.1) * 0.015;
 
     if (cfg.name === 'thumb') {
       const thumbFlex1 = angles[0] ?? 0.50;
@@ -97,6 +97,7 @@ export function ZhenjaSignAvatar({
   signId,
   token = 'HELLO',
   isIdle = false,
+  isPlaying = true,
   playbackRate = 1.0,
   queueLength = 0,
   onPoseComplete,
@@ -109,17 +110,20 @@ export function ZhenjaSignAvatar({
   const bonesRef = useRef({});
   const baseHipsYRef = useRef(null);
   const animStartTimeRef = useRef(performance.now());
+  const accumulatedAnimTimeRef = useRef(0);
   const lastActiveTimeRef = useRef(performance.now());
   const prevBonesRef = useRef({});
   const transitionStartRef = useRef(0);
   const isIdleRef = useRef(isIdle);
+  const isPlayingRef = useRef(isPlaying);
   const playbackRateRef = useRef(playbackRate);
   const queueLengthRef = useRef(queueLength);
   const themeModeRef = useRef(themeMode);
 
   // Keep refs in sync with latest props
   isIdleRef.current = isIdle;
-  if (!isIdle) {
+  isPlayingRef.current = isPlaying;
+  if (!isIdle && isPlaying) {
     lastActiveTimeRef.current = performance.now();
   }
   playbackRateRef.current = playbackRate;
@@ -152,10 +156,10 @@ export function ZhenjaSignAvatar({
     const isSingleLetter = rawToken.length === 1 && /^[A-Z0-9]$/.test(rawToken);
 
     // Dynamic queue acceleration: keeps avatar perfectly in sync with rapid video speech
-    const queueBoost = Math.min(2.8, 1.0 + (queueLength || 0) * 0.35);
+    const queueBoost = Math.min(3.2, 1.2 + (queueLength || 0) * 0.4);
     const effectiveRate = (playbackRate || 1.0) * queueBoost;
 
-    // Fallback static pose (Optimized for snappy, lifelike signing tempo: 460ms words, 240ms letters)
+    // Fallback static pose (Optimized for snappy, lifelike signing tempo: 340ms words, 180ms letters)
     const pose = isSingleLetter
       ? getSMPLXFingerspellPose(rawToken)
       : SMPLX_ISL_POSES[rawToken] || SMPLX_ISL_POSES['HELLO'];
@@ -179,8 +183,8 @@ export function ZhenjaSignAvatar({
             motionDataRef.current = data;
             animStartTimeRef.current = performance.now();
             transitionStartRef.current = performance.now();
-            const motionDurationMs = Math.max(220, Math.min(((data.frames.length / 30) * 1000), 700) / effectiveRate);
-            if (!isIdle && onPoseComplete) {
+            const motionDurationMs = Math.max(180, Math.min(((data.frames.length / 30) * 1000), 520) / effectiveRate);
+            if (!isIdle && isPlaying && onPoseComplete) {
               timer = setTimeout(() => {
                 if (onPoseComplete) onPoseComplete();
               }, motionDurationMs);
@@ -192,9 +196,9 @@ export function ZhenjaSignAvatar({
         .catch((err) => {
           console.debug('[ZhenjaAvatar] Motion JSON fetch error:', err);
           motionDataRef.current = null;
-          if (!isIdle && onPoseComplete) {
-            const baseDuration = isSingleLetter ? 240 : 460;
-            const durationMs = Math.max(180, (pose.duration ? Math.min(pose.duration, 520) : baseDuration) / effectiveRate);
+          if (!isIdle && isPlaying && onPoseComplete) {
+            const baseDuration = isSingleLetter ? 180 : 340;
+            const durationMs = Math.max(140, (pose.duration ? Math.min(pose.duration, 400) : baseDuration) / effectiveRate);
             timer = setTimeout(() => {
               if (onPoseComplete) onPoseComplete();
             }, durationMs);
@@ -202,9 +206,9 @@ export function ZhenjaSignAvatar({
         });
     } else {
       motionDataRef.current = null;
-      if (!isIdle && onPoseComplete) {
-        const baseDuration = isSingleLetter ? 240 : 460;
-        const durationMs = Math.max(180, (pose.duration ? Math.min(pose.duration, 520) : baseDuration) / effectiveRate);
+      if (!isIdle && isPlaying && onPoseComplete) {
+        const baseDuration = isSingleLetter ? 180 : 340;
+        const durationMs = Math.max(140, (pose.duration ? Math.min(pose.duration, 400) : baseDuration) / effectiveRate);
         timer = setTimeout(() => {
           if (onPoseComplete) onPoseComplete();
         }, durationMs);
@@ -214,7 +218,7 @@ export function ZhenjaSignAvatar({
     return () => {
       if (timer) clearTimeout(timer);
     };
-  }, [signId, token, isIdle, playbackRate, queueLength, onPoseComplete]);
+  }, [signId, token, isIdle, isPlaying, playbackRate, queueLength, onPoseComplete]);
 
   // ------------------------------------------------------------------
   // 2. Setup Three.js Scene + Load zhenja.glb
@@ -279,10 +283,10 @@ export function ZhenjaSignAvatar({
     }
     scene.background = bgTexture;
 
-    // ---- Camera Framing (Lowered framing to comfortably capture face, chest, and hands) ----
-    const camera = new THREE.PerspectiveCamera(46, width / height, 0.1, 100);
-    camera.position.set(0, 1.00, 1.30);
-    camera.lookAt(0, 0.90, 0);
+    // ---- Camera Framing (Direct Frontal Perspective for Clear Hands & Face) ----
+    const camera = new THREE.PerspectiveCamera(44, width / height, 0.1, 100);
+    camera.position.set(0, 1.08, 1.15);
+    camera.lookAt(0, 0.98, 0);
 
     // ---- Renderer ----
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
@@ -316,12 +320,12 @@ export function ZhenjaSignAvatar({
       if (w > 0 && h > 0) {
         camera.aspect = w / h;
         if (w / h > 1.2) {
-          camera.position.set(0, 1.00, 1.30);
-          camera.lookAt(0, 0.90, 0);
+          camera.position.set(0, 1.08, 1.15);
+          camera.lookAt(0, 0.98, 0);
         } else {
           // Direct look-ahead framing for Extension feed / portrait view
-          camera.position.set(0, 1.15, 1.25);
-          camera.lookAt(0, 1.05, 0);
+          camera.position.set(0, 1.10, 1.18);
+          camera.lookAt(0, 1.00, 0);
         }
         camera.updateProjectionMatrix();
         renderer.setSize(w, h);
@@ -436,19 +440,27 @@ export function ZhenjaSignAvatar({
       const now = timestamp || performance.now();
       const delta = Math.min(0.1, (now - lastTime) * 0.001 || 0.016);
       lastTime = now;
+
+      const isMotionPaused = !isPlayingRef.current;
+      const isCurrentlyIdle = Boolean(isIdleRef.current);
+
       const queueBoost = Math.min(2.8, 1.0 + (queueLengthRef.current || 0) * 0.35);
       const currentPlaybackRate = (playbackRateRef.current || 1.0) * queueBoost;
       const totalElapsed = (now - startTime) * 0.001;
-      const elapsed = (now - animStartTimeRef.current) * 0.001 * currentPlaybackRate;
+
+      if (!isMotionPaused && !isCurrentlyIdle) {
+        accumulatedAnimTimeRef.current += delta * currentPlaybackRate;
+      }
+      const elapsed = accumulatedAnimTimeRef.current;
       drawBackground(totalElapsed);
 
       const motionData = motionDataRef.current;
       const target = targetPoseRef.current || SMPLX_ISL_POSES['HELLO'];
       const loadedBones = bonesRef.current;
-      const sf = Math.min(1, delta * 24.0 * currentPlaybackRate);
+      const sf = Math.min(1, delta * 38.0 * currentPlaybackRate);
 
       // Fast, snappy lead-in crossfade blend factor (0 to 1 over transitionDuration)
-      const transitionDuration = Math.max(0.08, 0.14 / currentPlaybackRate);
+      const transitionDuration = Math.max(0.04, 0.08 / currentPlaybackRate);
       const transitionTime = (now - transitionStartRef.current) * 0.001;
       const blendFactor = Math.min(1, Math.max(0, transitionTime / transitionDuration));
       const smoothBlend = THREE.MathUtils.smoothstep(blendFactor, 0, 1);
@@ -474,18 +486,32 @@ export function ZhenjaSignAvatar({
 
       if (Object.keys(loadedBones).length > 0) {
         // Natural idle spine breathing + float bob
-        const breath = Math.sin(elapsed * 2.1) * 0.015;
+        const breath = (isMotionPaused || isCurrentlyIdle) ? Math.sin(totalElapsed * 1.5) * 0.008 : Math.sin(elapsed * 2.1) * 0.015;
         if (loadedBones['Spine2']) {
           loadedBones['Spine2'].rotation.x = THREE.MathUtils.lerp(loadedBones['Spine2'].rotation.x, breath, sf * 0.4);
         }
 
         if (loadedBones['Hips'] && baseHipsYRef.current !== null) {
-          const floatBob = Math.sin(elapsed * 1.5) * 0.003;
+          const floatBob = (isMotionPaused || isCurrentlyIdle) ? 0 : Math.sin(elapsed * 1.5) * 0.003;
           loadedBones['Hips'].position.y = baseHipsYRef.current + floatBob;
         }
 
-        // 1. Motion Capture Frames Playback (if motion JSON loaded)
-        if (motionData && motionData.frames && motionData.frames.length > 0) {
+        // --- PAUSED STATE: Smoothly rest arms and hands at sides, 100% motionless ---
+        if (isMotionPaused) {
+          setBoneRotationWithBlend('Head', 0.15, 0.0, 0.0);
+          setBoneRotationWithBlend('Neck', 0.10, 0.0, 0.0);
+
+          setBoneRotationWithBlend('LeftArm', 0.85, 0.08, 0.08);
+          setBoneRotationWithBlend('LeftForeArm', 0.05, 0.0, 0.25);
+          setBoneRotationWithBlend('LeftHand', 0.05, 0.0, 0.0);
+          applyFingerShape(loadedBones, 'LeftHand', 'rest_relaxed', sf, 0, true);
+
+          setBoneRotationWithBlend('RightArm', 0.85, -0.08, -0.08);
+          setBoneRotationWithBlend('RightForeArm', 0.05, 0.0, -0.25);
+          setBoneRotationWithBlend('RightHand', 0.05, 0.0, 0.0);
+          applyFingerShape(loadedBones, 'RightHand', 'rest_relaxed', sf, 0, true);
+        } else if (motionData && motionData.frames && motionData.frames.length > 0) {
+          // 1. Motion Capture Frames Playback (if motion JSON loaded)
           const frames = motionData.frames;
           const totalFrames = frames.length;
           const fps = 30;
@@ -515,47 +541,47 @@ export function ZhenjaSignAvatar({
               (getVal(38) || 0) * 0.4
             );
 
-            // Left Arm Chain (Shoulder, Elbow, Wrist) - Verified Front Chest Signing Space
+            // Left Arm Chain (Shoulder, Elbow, Wrist) - Direct Frontal View Facing Camera
             const rawL_armX = getVal(48) || 0;
             const rawL_armY = getVal(49) || 0;
             const rawL_armZ = getVal(50) || 0;
-            const targetL_rotX = 0.95 + rawL_armX * 0.15;
-            const targetL_rotY = 0.10 + rawL_armY * 0.15;
-            const targetL_rotZ = 0.15 + rawL_armZ * 0.15;
+            const targetL_rotX = 1.06 + rawL_armX * 0.15;
+            const targetL_rotY = 0.20 + rawL_armY * 0.15;
+            const targetL_rotZ = 0.18 + rawL_armZ * 0.15;
             setBoneRotationWithBlend('LeftArm', targetL_rotX, targetL_rotY, targetL_rotZ);
 
             const leftElbow = Math.min(1.8, Math.abs(getVal(55) || getVal(54) || 0.5));
-            const targetL_elbowX = 1.20 + (leftElbow - 0.5) * 0.25;
-            const targetL_elbowY = (getVal(54) || 0) * 0.15;
-            const targetL_elbowZ = 1.30;
+            const targetL_elbowX = 1.32 + (leftElbow - 0.5) * 0.25;
+            const targetL_elbowY = 0.22 + (getVal(54) || 0) * 0.15;
+            const targetL_elbowZ = 1.25;
             setBoneRotationWithBlend('LeftForeArm', targetL_elbowX, targetL_elbowY, targetL_elbowZ);
 
             setBoneRotationWithBlend(
               'LeftHand',
-              0.20 + (getVal(60) || 0) * 0.15,
-              0.10 + (getVal(61) || 0) * 0.15,
+              0.28 + (getVal(60) || 0) * 0.15,
+              0.18 + (getVal(61) || 0) * 0.15,
               (getVal(62) || 0) * 0.15
             );
 
-            // Right Arm Chain (Shoulder, Elbow, Wrist) - Verified Front Chest Signing Space
+            // Right Arm Chain (Shoulder, Elbow, Wrist) - Direct Frontal View Facing Camera
             const rawR_armX = getVal(51) || 0;
             const rawR_armY = getVal(52) || 0;
             const rawR_armZ = getVal(53) || 0;
-            const targetR_rotX = 0.95 + rawR_armX * 0.15;
-            const targetR_rotY = -0.10 - rawR_armY * 0.15;
-            const targetR_rotZ = -0.15 - rawR_armZ * 0.15;
+            const targetR_rotX = 1.06 + rawR_armX * 0.15;
+            const targetR_rotY = -0.20 - rawR_armY * 0.15;
+            const targetR_rotZ = -0.18 - rawR_armZ * 0.15;
             setBoneRotationWithBlend('RightArm', targetR_rotX, targetR_rotY, targetR_rotZ);
 
             const rightElbow = Math.min(1.8, Math.abs(getVal(58) || getVal(57) || 0.5));
-            const targetR_elbowX = 1.20 + (rightElbow - 0.5) * 0.25;
-            const targetR_elbowY = -(getVal(57) || 0) * 0.15;
-            const targetR_elbowZ = -1.30;
+            const targetR_elbowX = 1.32 + (rightElbow - 0.5) * 0.25;
+            const targetR_elbowY = -0.22 - (getVal(57) || 0) * 0.15;
+            const targetR_elbowZ = -1.25;
             setBoneRotationWithBlend('RightForeArm', targetR_elbowX, targetR_elbowY, targetR_elbowZ);
 
             setBoneRotationWithBlend(
               'RightHand',
-              0.20 + (getVal(63) || 0) * 0.15,
-              -0.10 + (getVal(64) || 0) * 0.15,
+              0.28 + (getVal(63) || 0) * 0.15,
+              -0.18 + (getVal(64) || 0) * 0.15,
               (getVal(65) || 0) * 0.15
             );
 
@@ -586,16 +612,15 @@ export function ZhenjaSignAvatar({
         } else if (target) {
           // 2. Holistic Pose Kinematics Fallback (for single letters & signs without JSON)
           const timeSinceActive = (now - lastActiveTimeRef.current) * 0.001;
-          const isFullyIdle = Boolean(isIdleRef.current) && timeSinceActive > 1.8;
-          const isPoisedHold = Boolean(isIdleRef.current) && !isFullyIdle;
+          const isFullyIdle = isCurrentlyIdle && timeSinceActive > 0.8;
+          const isPoisedHold = isCurrentlyIdle && !isFullyIdle;
 
-          if (!isIdleRef.current) {
+          if (!isCurrentlyIdle) {
             lastActiveTimeRef.current = now;
           }
 
-          const armSwayY = isFullyIdle ? Math.sin(elapsed * 2.2) * 0.025 : Math.sin(elapsed * 2.5) * 0.012;
-          const armSwayZ = isFullyIdle ? Math.cos(elapsed * 1.8) * 0.015 : Math.cos(elapsed * 2.0) * 0.008;
-          const wristRotOffset = isFullyIdle ? Math.sin(elapsed * 3.4) * 0.02 : 0;
+          const armSwayY = isFullyIdle ? 0 : Math.sin(elapsed * 2.5) * 0.012;
+          const armSwayZ = isFullyIdle ? 0 : Math.cos(elapsed * 2.0) * 0.008;
 
           if (target.head) {
             setBoneRotationWithBlend('Head', (target.head.x || 0) + armSwayY * 0.2, (target.head.y || 0) + armSwayZ * 0.3, target.head.z || 0);
@@ -603,56 +628,56 @@ export function ZhenjaSignAvatar({
           }
 
           if (isFullyIdle) {
-            // Long pause (>1.8s): Natural relaxed resting pose along front-sides of thighs
-            setBoneRotationWithBlend('LeftArm', 0.85 + armSwayY, 0.08, 0.08);
-            setBoneRotationWithBlend('LeftForeArm', 0.05, 0.0, 0.25 + wristRotOffset);
+            // Natural relaxed resting pose along front-sides of thighs (zero hand motion)
+            setBoneRotationWithBlend('LeftArm', 0.85, 0.08, 0.08);
+            setBoneRotationWithBlend('LeftForeArm', 0.05, 0.0, 0.25);
             setBoneRotationWithBlend('LeftHand', 0.05, 0.0, 0.0);
-            applyFingerShape(loadedBones, 'LeftHand', 'rest_relaxed', sf, elapsed);
+            applyFingerShape(loadedBones, 'LeftHand', 'rest_relaxed', sf, 0, true);
 
-            setBoneRotationWithBlend('RightArm', 0.85 + armSwayY, -0.08, -0.08);
-            setBoneRotationWithBlend('RightForeArm', 0.05, 0.0, -0.25 - wristRotOffset);
+            setBoneRotationWithBlend('RightArm', 0.85, -0.08, -0.08);
+            setBoneRotationWithBlend('RightForeArm', 0.05, 0.0, -0.25);
             setBoneRotationWithBlend('RightHand', 0.05, 0.0, 0.0);
-            applyFingerShape(loadedBones, 'RightHand', 'rest_relaxed', sf, elapsed);
+            applyFingerShape(loadedBones, 'RightHand', 'rest_relaxed', sf, 0, true);
           } else if (isPoisedHold) {
-            // Co-articulation Hold (<1.8s between words/sentences): Poised signing stance in front of lower chest
-            setBoneRotationWithBlend('LeftArm', 0.70 + armSwayY, 0.18, 0.10);
-            setBoneRotationWithBlend('LeftForeArm', 1.10, 0.05, 1.20 + armSwayZ);
-            setBoneRotationWithBlend('LeftHand', 0.10, 0.05, 0.0);
-            applyFingerShape(loadedBones, 'LeftHand', 'rest_poised', sf, elapsed);
+            // Co-articulation Hold (<0.8s between words): Direct frontal poised signing stance in front of mid-chest
+            setBoneRotationWithBlend('LeftArm', 0.88 + armSwayY, 0.22, 0.16);
+            setBoneRotationWithBlend('LeftForeArm', 1.28, 0.22, 1.22 + armSwayZ);
+            setBoneRotationWithBlend('LeftHand', 0.28, 0.18, 0.05);
+            applyFingerShape(loadedBones, 'LeftHand', 'rest_poised', sf, elapsed, false);
 
-            setBoneRotationWithBlend('RightArm', 0.70 + armSwayY, -0.18, -0.10);
-            setBoneRotationWithBlend('RightForeArm', 1.10, -0.05, -1.20 - armSwayZ);
-            setBoneRotationWithBlend('RightHand', 0.10, -0.05, 0.0);
-            applyFingerShape(loadedBones, 'RightHand', 'rest_poised', sf, elapsed);
+            setBoneRotationWithBlend('RightArm', 0.88 + armSwayY, -0.22, -0.16);
+            setBoneRotationWithBlend('RightForeArm', 1.28, -0.22, -1.22 - armSwayZ);
+            setBoneRotationWithBlend('RightHand', 0.28, -0.18, -0.05);
+            applyFingerShape(loadedBones, 'RightHand', 'rest_poised', sf, elapsed, false);
           } else {
-            // Active Signing Gesture Posture (Elevated in front of chest)
+            // Active Signing Gesture Posture (Prominently elevated in front of chest)
             if (target.leftArm) {
               const la = target.leftArm;
               const isArmPoised = la.hand === 'rest_poised' || la.hand === 'rest_relaxed';
               if (isArmPoised) {
-                // Secondary non-signing arm stays poised ready in front of lower chest/waist
-                setBoneRotationWithBlend('LeftArm', 0.70, 0.18, 0.10);
-                setBoneRotationWithBlend('LeftForeArm', 1.10, 0.05, 1.20);
-                setBoneRotationWithBlend('LeftHand', 0.10, 0.05, 0.0);
-                applyFingerShape(loadedBones, 'LeftHand', 'rest_poised', sf, elapsed);
+                // Secondary non-signing arm stays poised forward in front of chest
+                setBoneRotationWithBlend('LeftArm', 0.88, 0.22, 0.16);
+                setBoneRotationWithBlend('LeftForeArm', 1.28, 0.22, 1.22);
+                setBoneRotationWithBlend('LeftHand', 0.28, 0.18, 0.05);
+                applyFingerShape(loadedBones, 'LeftHand', 'rest_poised', sf, elapsed, false);
               } else {
-                const targetL_rotX = 0.95 + (la.shoulder?.x ? (la.shoulder.x - 0.8) * 0.20 : 0);
-                const targetL_rotY = 0.10 + (la.shoulder?.y ? (la.shoulder.y - 0.25) * 0.20 : 0);
-                const targetL_rotZ = 0.15 + (la.shoulder?.z ? (la.shoulder.z + 0.15) * 0.20 : 0);
+                const targetL_rotX = 1.06 + (la.shoulder?.x ? (la.shoulder.x - 0.8) * 0.20 : 0);
+                const targetL_rotY = 0.20 + (la.shoulder?.y ? (la.shoulder.y - 0.25) * 0.20 : 0);
+                const targetL_rotZ = 0.18 + (la.shoulder?.z ? (la.shoulder.z + 0.15) * 0.20 : 0);
                 setBoneRotationWithBlend('LeftArm', targetL_rotX, targetL_rotY, targetL_rotZ);
 
-                const targetL_elbowX = 1.20 + (la.elbow ? (la.elbow - 1.35) * 0.30 : 0);
-                const targetL_elbowY = (la.forearmTwist || 0) * 0.15;
-                const targetL_elbowZ = 1.30;
+                const targetL_elbowX = 1.32 + (la.elbow ? (la.elbow - 1.35) * 0.30 : 0);
+                const targetL_elbowY = 0.20 + (la.forearmTwist || 0) * 0.15;
+                const targetL_elbowZ = 1.25;
                 setBoneRotationWithBlend('LeftForeArm', targetL_elbowX, targetL_elbowY, targetL_elbowZ);
 
                 setBoneRotationWithBlend(
                   'LeftHand',
-                  0.20 + (la.wrist?.x || 0) * 0.15,
-                  0.10 + (la.wrist?.y || 0) * 0.15,
+                  0.28 + (la.wrist?.x || 0) * 0.15,
+                  0.18 + (la.wrist?.y || 0) * 0.15,
                   (la.wrist?.z || 0) * 0.15
                 );
-                applyFingerShape(loadedBones, 'LeftHand', la.hand || 'open_5_spread', sf, elapsed);
+                applyFingerShape(loadedBones, 'LeftHand', la.hand || 'open_5_spread', sf, elapsed, false);
               }
             }
 
@@ -660,29 +685,29 @@ export function ZhenjaSignAvatar({
               const ra = target.rightArm;
               const isArmPoised = ra.hand === 'rest_poised' || ra.hand === 'rest_relaxed';
               if (isArmPoised) {
-                // Secondary non-signing arm stays poised ready in front of lower chest/waist
-                setBoneRotationWithBlend('RightArm', 0.70, -0.18, -0.10);
-                setBoneRotationWithBlend('RightForeArm', 1.10, -0.05, -1.20);
-                setBoneRotationWithBlend('RightHand', 0.10, -0.05, 0.0);
-                applyFingerShape(loadedBones, 'RightHand', 'rest_poised', sf, elapsed);
+                // Secondary non-signing arm stays poised forward in front of chest
+                setBoneRotationWithBlend('RightArm', 0.88, -0.22, -0.16);
+                setBoneRotationWithBlend('RightForeArm', 1.28, -0.22, -1.22);
+                setBoneRotationWithBlend('RightHand', 0.28, -0.18, -0.05);
+                applyFingerShape(loadedBones, 'RightHand', 'rest_poised', sf, elapsed, false);
               } else {
-                const targetR_rotX = 0.95 + (ra.shoulder?.x ? (ra.shoulder.x - 0.85) * 0.20 : 0);
-                const targetR_rotY = -0.10 - (ra.shoulder?.y ? (ra.shoulder.y + 0.20) * 0.20 : 0);
-                const targetR_rotZ = -0.15 - (ra.shoulder?.z ? (ra.shoulder.z - 0.15) * 0.20 : 0);
+                const targetR_rotX = 1.06 + (ra.shoulder?.x ? (ra.shoulder.x - 0.85) * 0.20 : 0);
+                const targetR_rotY = -0.20 - (ra.shoulder?.y ? (ra.shoulder.y + 0.20) * 0.20 : 0);
+                const targetR_rotZ = -0.18 - (ra.shoulder?.z ? (ra.shoulder.z - 0.15) * 0.20 : 0);
                 setBoneRotationWithBlend('RightArm', targetR_rotX, targetR_rotY, targetR_rotZ);
 
-                const targetR_elbowX = 1.20 + (ra.elbow ? (ra.elbow - 1.45) * 0.30 : 0);
-                const targetR_elbowY = -(ra.forearmTwist || 0) * 0.15;
-                const targetR_elbowZ = -1.30;
+                const targetR_elbowX = 1.32 + (ra.elbow ? (ra.elbow - 1.45) * 0.30 : 0);
+                const targetR_elbowY = -0.20 - (ra.forearmTwist || 0) * 0.15;
+                const targetR_elbowZ = -1.25;
                 setBoneRotationWithBlend('RightForeArm', targetR_elbowX, targetR_elbowY, targetR_elbowZ);
 
                 setBoneRotationWithBlend(
                   'RightHand',
-                  0.20 + (ra.wrist?.x || 0) * 0.15,
-                  -0.10 + (ra.wrist?.y || 0) * 0.15,
+                  0.28 + (ra.wrist?.x || 0) * 0.15,
+                  -0.18 + (ra.wrist?.y || 0) * 0.15,
                   (ra.wrist?.z || 0) * 0.15
                 );
-                applyFingerShape(loadedBones, 'RightHand', ra.hand || 'open_5_spread', sf, elapsed);
+                applyFingerShape(loadedBones, 'RightHand', ra.hand || 'open_5_spread', sf, elapsed, false);
               }
             }
           }

@@ -29,12 +29,15 @@ import { DEFAULT_AVATAR_CONFIG } from '../../constants/avatarCustomization';
 export function FBXSignAvatar({
   currentItem,
   isIdle = true,
+  isPlaying = true,
   playbackRate = 1.0,
   onPoseComplete,
   config = DEFAULT_AVATAR_CONFIG
 }) {
   const mountRef = useRef(null);
   const targetPoseRef = useRef(SMPLX_ISL_POSES['IDLE']);
+  const isPlayingRef = useRef(isPlaying);
+  isPlayingRef.current = isPlaying;
   const [loadState, setLoadState] = useState('loading');
   const [loadProgress, setLoadProgress] = useState(0);
 
@@ -45,18 +48,18 @@ export function FBXSignAvatar({
     const token = currentItem?.token?.toUpperCase() || 'IDLE';
     const isFingerspelling = Boolean(currentItem?.isFingerspelling);
     let pose = SMPLX_ISL_POSES['IDLE'];
-    if (!isIdle && token !== 'IDLE') {
+    if (!isIdle && isPlaying && token !== 'IDLE') {
       pose = isFingerspelling
         ? getSMPLXFingerspellPose(token)
         : SMPLX_ISL_POSES[token] || SMPLX_ISL_POSES['HELLO'];
     }
     targetPoseRef.current = pose;
-    if (!isIdle) {
+    if (!isIdle && isPlaying) {
       const duration = (pose.duration || 1200) / playbackRate;
       const timer = setTimeout(() => { if (onPoseComplete) onPoseComplete(); }, duration);
       return () => clearTimeout(timer);
     }
-  }, [currentItem?.id, currentItem?.token, currentItem?.isFingerspelling, isIdle, playbackRate, onPoseComplete]);
+  }, [currentItem?.id, currentItem?.token, currentItem?.isFingerspelling, isIdle, isPlaying, playbackRate, onPoseComplete]);
 
   // ------------------------------------------------------------------
   // 2. Three.js scene + FBX load
@@ -287,29 +290,27 @@ export function FBXSignAvatar({
       blinkTimer += delta;
       const blinking = blinkTimer > 3.5 && blinkTimer < 3.7;
       if (blinkTimer > 3.7) blinkTimer = 0;
+      // Limb sway active only during active non-paused idle
+      const isPaused = !isPlayingRef.current;
+      const isCurrentlyIdle = isIdle || isPaused;
+      const armSwayY = (isCurrentlyIdle && !isPaused) ? Math.sin(elapsed * 2.2) * 0.025 : 0;
+      const armSwayZ = (isCurrentlyIdle && !isPaused) ? Math.cos(elapsed * 1.8) * 0.015 : 0;
+      const wristRotOffset = 0;
 
-      // Limb sway & wrist wave active ONLY during IDLE to keep active signing crisp & precise
-      const isCurrentlyIdle = isIdle || target.name === 'IDLE';
-      const armSwayY = isCurrentlyIdle ? Math.sin(elapsed * 2.2) * 0.025 : 0;
-      const armSwayZ = isCurrentlyIdle ? Math.cos(elapsed * 1.8) * 0.015 : 0;
-      const wristRotOffset = isCurrentlyIdle ? Math.sin(elapsed * 3.4) * 0.02 : 0;
-
-      // Breathing on spine
-      if (bones.spine) {
-        const breath = Math.sin(elapsed * 2.1) * 0.012;
-        bones.spine.rotation.x = THREE.MathUtils.lerp(bones.spine.rotation.x, breath, sf * 0.4);
+      // Head & neck
+      if (bones.head && target.head) {
+        bones.head.rotation.x = THREE.MathUtils.lerp(bones.head.rotation.x, (target.head.x || 0) + armSwayY * 0.2, sf);
+        bones.head.rotation.y = THREE.MathUtils.lerp(bones.head.rotation.y, (target.head.y || 0) + armSwayZ * 0.3, sf);
+        bones.head.rotation.z = THREE.MathUtils.lerp(bones.head.rotation.z, (target.head.z || 0), sf);
       }
-
-      // Head
-      if (target.head && bones.head) {
-        bones.head.rotation.x = THREE.MathUtils.lerp(bones.head.rotation.x, target.head.x + (blinking ? 0.04 : 0) + armSwayY * 0.2, sf);
-        bones.head.rotation.y = THREE.MathUtils.lerp(bones.head.rotation.y, target.head.y + armSwayZ * 0.3, sf);
-        bones.head.rotation.z = THREE.MathUtils.lerp(bones.head.rotation.z, target.head.z, sf);
+      if (bones.neck && target.head) {
+        bones.neck.rotation.x = THREE.MathUtils.lerp(bones.neck.rotation.x, (target.head.x || 0) * 0.5, sf);
+        bones.neck.rotation.y = THREE.MathUtils.lerp(bones.neck.rotation.y, (target.head.y || 0) * 0.5, sf);
       }
 
       // Left arm chain (shoulder, upper arm, elbow, forearm, wrist, hands)
       if (target.leftArm) {
-        const la = target.leftArm;
+        const la = isPaused ? { shoulder: { x: 0.2, y: 0.05, z: 0.1 }, elbow: 0.1, hand: 'rest_relaxed' } : target.leftArm;
         if (bones.leftShoulder) {
           const targetL_rotZ = -0.55 - (la.shoulder.x || 0) * 0.5;
           const targetL_rotY = 0.45 + (la.shoulder.y || 0) * 0.5;
@@ -330,12 +331,12 @@ export function FBXSignAvatar({
           bones.leftWrist.rotation.y = THREE.MathUtils.lerp(bones.leftWrist.rotation.y, (la.wrist?.y || 0), sf);
           bones.leftWrist.rotation.z = THREE.MathUtils.lerp(bones.leftWrist.rotation.z, (la.wrist?.z || 0) + wristRotOffset * 0.5, sf);
         }
-        applyFingerShape(bones, 'l', la.hand || 'rest_relaxed', sf, elapsed);
+        applyFingerShape(bones, 'l', la.hand || 'rest_relaxed', sf, elapsed, isPaused || isCurrentlyIdle);
       }
 
       // Right arm chain (shoulder, upper arm, elbow, forearm, wrist, hands)
       if (target.rightArm) {
-        const ra = target.rightArm;
+        const ra = isPaused ? { shoulder: { x: 0.2, y: -0.05, z: -0.1 }, elbow: 0.1, hand: 'rest_relaxed' } : target.rightArm;
         if (bones.rightShoulder) {
           const targetR_rotZ = 0.55 + (ra.shoulder.x || 0) * 0.5;
           const targetR_rotY = -0.45 + (ra.shoulder.y || 0) * 0.5;
@@ -356,11 +357,11 @@ export function FBXSignAvatar({
           bones.rightWrist.rotation.y = THREE.MathUtils.lerp(bones.rightWrist.rotation.y, (ra.wrist?.y || 0), sf);
           bones.rightWrist.rotation.z = THREE.MathUtils.lerp(bones.rightWrist.rotation.z, (ra.wrist?.z || 0) - wristRotOffset * 0.5, sf);
         }
-        applyFingerShape(bones, 'r', ra.hand || 'rest_relaxed', sf, elapsed);
+        applyFingerShape(bones, 'r', ra.hand || 'rest_relaxed', sf, elapsed, isPaused || isCurrentlyIdle);
       }
 
       // Subtle float-bob
-      if (modelGroup) modelGroup.position.y = Math.sin(elapsed * 1.1) * 0.6;
+      if (modelGroup) modelGroup.position.y = (isPaused ? 0 : Math.sin(elapsed * 1.1) * 0.6);
 
       renderer.render(scene, camera);
     };
@@ -451,7 +452,7 @@ export function FBXSignAvatar({
 // ---------------------------------------------------------------------------
 // Finger Shape Helper — 30-Joint Articulated Finger Kinematics
 // ---------------------------------------------------------------------------
-function applyFingerShape(bones, side, shapeKey, sf, elapsed = 0) {
+function applyFingerShape(bones, side, shapeKey, sf, elapsed = 0, isMotionPaused = false) {
   const shape = MANO_HAND_SHAPES[shapeKey] || MANO_HAND_SHAPES['rest_relaxed'];
   if (!shape) return;
   const isRight = side === 'r';
@@ -468,7 +469,7 @@ function applyFingerShape(bones, side, shapeKey, sf, elapsed = 0) {
   fingerConfigs.forEach((cfg, idx) => {
     const angles = shape[cfg.name] || [0.2, 0.2, 0.15];
     const [b1, b2, b3] = cfg.b;
-    const flutter = Math.sin(elapsed * 4.8 + idx * 1.1) * 0.02;
+    const flutter = isMotionPaused ? 0 : Math.sin(elapsed * 4.8 + idx * 1.1) * 0.02;
 
     if (cfg.name === 'thumb') {
       if (bones[b1]) {

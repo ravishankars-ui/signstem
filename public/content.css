@@ -71,11 +71,21 @@
 #signstem-isl-widget.ss-expanded {
   width: 480px !important;
   height: 640px !important;
-  min-height: 560px;
+  min-height: 560px !important;
+  max-height: 94vh !important;
 }
 
 #signstem-isl-widget.ss-minimized {
-  min-height: 0 !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  max-height: 42px !important;
+  border-radius: 14px !important;
+  overflow: hidden !important;
+  box-shadow: 0 8px 24px rgba(45, 30, 20, 0.18), 0 2px 6px rgba(79, 70, 229, 0.15) !important;
+}
+
+#signstem-isl-widget.ss-minimized .ss-avatar-stage {
+  display: none !important;
 }
 
 /* ─── Header ─────────────────────────────────────────── */

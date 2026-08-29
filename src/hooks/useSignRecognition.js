@@ -39,12 +39,12 @@ function renderHandSkeleton(canvas, video, multiHandLandmarks, isMirrored = fals
   for (const landmarks of multiHandLandmarks) {
     if (!Array.isArray(landmarks) || landmarks.length < 21) continue;
 
-    // 1. Draw connecting skeleton bones
-    ctx.lineWidth = 4;
+    // 1. Draw glowing neon skeleton bones
+    ctx.lineWidth = 3.5;
     ctx.strokeStyle = '#10b981';
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    ctx.shadowColor = 'rgba(16, 185, 129, 0.7)';
+    ctx.shadowColor = 'rgba(16, 185, 129, 0.85)';
     ctx.shadowBlur = 8;
 
     for (const [startIdx, endIdx] of HAND_CONNECTIONS) {
@@ -58,7 +58,7 @@ function renderHandSkeleton(canvas, video, multiHandLandmarks, isMirrored = fals
       ctx.stroke();
     }
 
-    // 2. Draw joint landmarks
+    // 2. Draw joint landmarks with distinct cybernetic highlights
     ctx.shadowBlur = 0;
     for (let i = 0; i < landmarks.length; i++) {
       const lm = landmarks[i];
@@ -72,7 +72,7 @@ function renderHandSkeleton(canvas, video, multiHandLandmarks, isMirrored = fals
       ctx.fillStyle = isTip ? '#6366f1' : isWrist ? '#f59e0b' : '#34d399';
       ctx.fill();
 
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 1.5;
       ctx.strokeStyle = '#ffffff';
       ctx.stroke();
     }
@@ -116,13 +116,15 @@ export function useSignRecognition({
   const animFrameRef = useRef(null);
   const activeRef = useRef(false);
   const isProcessingFrameRef = useRef(false);
-  const cooldownRef = useRef(false);
+  const lastRecognizedKeyRef = useRef(null);
+  const lastRecognizedTimeRef = useRef(0);
+  const recentBufferRef = useRef([]);
   const frameCountRef = useRef(0);
   const lastFpsTimeRef = useRef(Date.now());
   const onSignRef = useRef(onSignRecognized);
   onSignRef.current = onSignRecognized;
 
-  // Helper to ensure MediaPipe Hands script is loaded
+  // Helper to ensure MediaPipe Hands class is resolved
   const ensureMediaPipeLoaded = useCallback(() => {
     return new Promise((resolve) => {
       const getHandsClass = () => window.Hands || globalThis.Hands || self?.Hands;
@@ -145,7 +147,6 @@ export function useSignRecognition({
         });
       };
 
-      // Try local vendor script first, then Chrome extension URL, then CDN
       const vendorUrl = (typeof chrome !== 'undefined' && chrome?.runtime?.getURL)
         ? chrome.runtime.getURL('vendor/hands.js')
         : '/vendor/hands.js';
@@ -175,20 +176,23 @@ export function useSignRecognition({
             return chrome.runtime.getURL('vendor/');
           } catch {}
         }
-        return '/vendor/';
+        const base = (typeof import.meta !== 'undefined' && import.meta.env?.BASE_URL) || '/';
+        return base.endsWith('/') ? `${base}vendor/` : `${base}/vendor/`;
       };
 
       const vendorBase = getVendorBaseUrl();
 
       const hands = new HandsClass({
-        locateFile: (file) => `${vendorBase}${file}`,
+        locateFile: (file) => {
+          return `${vendorBase}${file}`;
+        },
       });
 
       hands.setOptions({
         maxNumHands: 2,
         modelComplexity: 0, // Lite model for instant startup & high FPS
-        minDetectionConfidence: 0.4,
-        minTrackingConfidence: 0.4,
+        minDetectionConfidence: 0.35,
+        minTrackingConfidence: 0.35,
       });
 
       hands.onResults((results) => {
@@ -206,10 +210,11 @@ export function useSignRecognition({
 
         // Draw skeleton onto canvas overlay
         if (canvasRef?.current) {
-          renderHandSkeleton(canvasRef.current, videoRef?.current, landmarks, isMirrored);
+          renderHandSkeleton(canvasRef.current, videoRef?.current, landmarks, false);
         }
 
         if (!hasHands) {
+          recentBufferRef.current = [];
           return;
         }
 
@@ -221,19 +226,29 @@ export function useSignRecognition({
         const cues = analyzeFacialCues(null, []);
         setFacialCues(cues);
 
-        if (cooldownRef.current) return;
-
         const gesture = classifyGesture(landmarks);
-        if (gesture) {
-          cooldownRef.current = true;
-          setLastSign({ ...gesture, accuracy: metrics });
-          if (onSignRef.current) {
-            onSignRef.current({ ...gesture, accuracy: metrics });
+        if (gesture && gesture.confidence >= confidenceThreshold) {
+          const buffer = recentBufferRef.current;
+          buffer.push(gesture.sign);
+          if (buffer.length > 3) buffer.shift();
+
+          // High confidence (>94%) triggers immediately; otherwise 2 consistent frames trigger
+          const isHighConfidence = gesture.confidence >= 94;
+          const isStable = buffer.filter(k => k === gesture.sign).length >= 2;
+          const elapsed = now - lastRecognizedTimeRef.current;
+          const isDifferentSign = lastRecognizedKeyRef.current !== gesture.sign;
+
+          // Adaptive 180ms debounce for rapid fingerspelling, 240ms for repeat signs
+          const minInterval = isDifferentSign ? 180 : 240;
+
+          if ((isHighConfidence || isStable) && elapsed > minInterval) {
+            lastRecognizedKeyRef.current = gesture.sign;
+            lastRecognizedTimeRef.current = now;
+            setLastSign({ ...gesture, accuracy: metrics });
+            if (onSignRef.current) {
+              onSignRef.current({ ...gesture, accuracy: metrics });
+            }
           }
-          // 250ms cooldown for smooth continuous recognition
-          setTimeout(() => {
-            cooldownRef.current = false;
-          }, 250);
         }
       });
 
@@ -244,7 +259,7 @@ export function useSignRecognition({
       setStatusMessage('MediaPipe init failed: ' + err.message);
       return null;
     }
-  }, [ensureMediaPipeLoaded, canvasRef, videoRef, isMirrored]);
+  }, [ensureMediaPipeLoaded, canvasRef, videoRef, confidenceThreshold]);
 
   const stopDetection = useCallback(() => {
     activeRef.current = false;
@@ -264,52 +279,64 @@ export function useSignRecognition({
   }, [canvasRef]);
 
   const startDetection = useCallback(async () => {
-    const video = videoRef?.current;
-    if (!video) {
-      setStatusMessage('Waiting for video viewfinder...');
-      return;
-    }
-
-    setStatusMessage('Loading AI Vision model...');
-    const hands = await initMediaPipe();
-    if (!hands) {
-      return;
-    }
-
     activeRef.current = true;
-    setIsRunning(true);
-    setStatusMessage('Recognition active');
+    setStatusMessage('Loading AI Vision model...');
 
-    const loop = async () => {
+    const hands = await initMediaPipe();
+    if (!hands || !activeRef.current) {
+      return;
+    }
+
+    let retryCount = 0;
+    const startLoopWhenReady = () => {
       if (!activeRef.current) return;
 
       const targetVideo = videoRef?.current;
-      if (
-        targetVideo &&
-        targetVideo.readyState >= 2 &&
-        !targetVideo.paused &&
-        !targetVideo.ended &&
-        targetVideo.videoWidth > 0 &&
-        !isProcessingFrameRef.current
-      ) {
-        isProcessingFrameRef.current = true;
-        try {
-          if (handsRef.current) {
-            await handsRef.current.send({ image: targetVideo });
-          }
-        } catch (e) {
-          console.debug('[useSignRecognition] Frame send error:', e);
-        } finally {
-          isProcessingFrameRef.current = false;
+      if (!targetVideo || targetVideo.readyState < 2 || targetVideo.videoWidth === 0) {
+        retryCount++;
+        if (retryCount < 80) { // retry for up to 4 seconds
+          setStatusMessage('Waiting for video viewfinder...');
+          setTimeout(startLoopWhenReady, 50);
+          return;
         }
       }
 
-      if (activeRef.current) {
-        animFrameRef.current = requestAnimationFrame(loop);
-      }
+      setIsRunning(true);
+      setStatusMessage('Live recognition active');
+
+      const loop = async () => {
+        if (!activeRef.current) return;
+
+        const currentVideo = videoRef?.current;
+        if (
+          currentVideo &&
+          currentVideo.readyState >= 2 &&
+          !currentVideo.paused &&
+          !currentVideo.ended &&
+          currentVideo.videoWidth > 0 &&
+          !isProcessingFrameRef.current
+        ) {
+          isProcessingFrameRef.current = true;
+          try {
+            if (handsRef.current) {
+              await handsRef.current.send({ image: currentVideo });
+            }
+          } catch (e) {
+            console.debug('[useSignRecognition] Frame send error:', e);
+          } finally {
+            isProcessingFrameRef.current = false;
+          }
+        }
+
+        if (activeRef.current) {
+          animFrameRef.current = requestAnimationFrame(loop);
+        }
+      };
+
+      animFrameRef.current = requestAnimationFrame(loop);
     };
 
-    animFrameRef.current = requestAnimationFrame(loop);
+    startLoopWhenReady();
   }, [videoRef, initMediaPipe]);
 
   useEffect(() => {
@@ -333,4 +360,4 @@ export function useSignRecognition({
   };
 }
 
-
+export default useSignRecognition;

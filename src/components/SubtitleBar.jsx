@@ -1,12 +1,13 @@
 import React from 'react';
 import { ISL_WORD_POSES, getISLFingerspellPose } from '../constants/islPoseData';
 
-export function SubtitleBar({ currentItem, queue = [], isIdle }) {
+export function SubtitleBar({ currentItem, queue = [], isIdle, isPlaying = true }) {
   const isFingerspelling = Boolean(currentItem?.isFingerspelling);
   const wordRef = currentItem?.wordRef || '';
   const token = currentItem?.token?.toUpperCase() || '';
   const letterIndex = currentItem?.letterIndex ?? 0;
   const queueLen = queue.length;
+  const isPaused = !isPlaying && !isIdle;
 
   const poseData = !isIdle && token
     ? (isFingerspelling ? getISLFingerspellPose(token) : ISL_WORD_POSES[token] || ISL_WORD_POSES['HELLO'])
@@ -19,8 +20,12 @@ export function SubtitleBar({ currentItem, queue = [], isIdle }) {
       <div style={S.bar}>
         {/* Status */}
         <div style={S.status}>
-          <div style={{ ...S.dot, background: isIdle ? '#94a3b8' : '#10b981', boxShadow: isIdle ? 'none' : '0 0 8px rgba(16,185,129,0.6)' }} />
-          <span style={S.statusLabel}>{isIdle ? 'Ready' : 'Signing'}</span>
+          <div style={{
+            ...S.dot,
+            background: isIdle ? '#94a3b8' : isPaused ? '#f59e0b' : '#10b981',
+            boxShadow: isIdle ? 'none' : isPaused ? '0 0 8px rgba(245,158,11,0.6)' : '0 0 8px rgba(16,185,129,0.6)'
+          }} />
+          <span style={S.statusLabel}>{isIdle ? 'Ready' : isPaused ? 'Paused' : 'Signing'}</span>
         </div>
 
         {/* Content */}

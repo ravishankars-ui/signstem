@@ -33,6 +33,9 @@ export function useAnimationQueue({ onTokenStart, onSequenceComplete } = {}) {
   const isIdleRef = useRef(isIdle);
   isIdleRef.current = isIdle;
 
+  const isPlayingRef = useRef(isPlaying);
+  isPlayingRef.current = isPlaying;
+
   const onTokenStartRef = useRef(onTokenStart);
   onTokenStartRef.current = onTokenStart;
 
@@ -56,7 +59,6 @@ export function useAnimationQueue({ onTokenStart, onSequenceComplete } = {}) {
 
         setCurrentItem(nextItem);
         setIsIdle(false);
-        setIsPlaying(true);
 
         if (onTokenStartRef.current) {
           onTokenStartRef.current(nextItem, remaining.length);
@@ -94,7 +96,6 @@ export function useAnimationQueue({ onTokenStart, onSequenceComplete } = {}) {
         const [firstItem, ...rest] = resolvedItems;
         setCurrentItem(firstItem);
         setIsIdle(false);
-        setIsPlaying(true);
 
         if (onTokenStartRef.current) {
           onTokenStartRef.current(firstItem, rest.length);
@@ -108,7 +109,6 @@ export function useAnimationQueue({ onTokenStart, onSequenceComplete } = {}) {
           const [firstItem, ...rest] = resolvedItems;
           setCurrentItem(firstItem);
           setIsIdle(false);
-          setIsPlaying(true);
 
           if (onTokenStartRef.current) {
             onTokenStartRef.current(firstItem, rest.length);
@@ -127,8 +127,8 @@ export function useAnimationQueue({ onTokenStart, onSequenceComplete } = {}) {
    * Handler invoked when the current video/animation completes (e.g. video `onEnded`).
    */
   const handleAnimationEnd = useCallback(() => {
-    if (isIdleRef.current) {
-      // Idle loop simply loops, so do nothing (handled via loop attribute on video)
+    if (isIdleRef.current || !isPlayingRef.current) {
+      // Do not advance if idle or paused
       return;
     }
     advanceNext();

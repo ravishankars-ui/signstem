@@ -1,11 +1,12 @@
 import React from 'react';
-import { RealisticHumanAvatar } from './RealisticHumanAvatar';
+import { Player } from '../Player';
 
 /**
- * HumanSignAvatar Master Component Wrapper
+ * 3D HumanSignAvatar Master Component Wrapper
  */
 export function HumanSignAvatar(props) {
-  return <RealisticHumanAvatar {...props} />;
+  return <Player {...props} />;
 }
 
 export default HumanSignAvatar;
+

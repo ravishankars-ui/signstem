@@ -10,8 +10,7 @@ export function DevControls({
   onClear,
   isIdle,
   currentSpeed,
-  onSpeedChange,
-  onOpenCustomizer
+  onSpeedChange
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [customInput, setCustomInput] = useState('NAMASTE HELLO RAVI HOW ARE YOU');
@@ -35,13 +34,6 @@ export function DevControls({
   return (
     <div className={`isl-dev-controls ${isOpen ? 'open' : 'collapsed'}`}>
       <div className="top-action-bar">
-        <button
-          className="customizer-trigger-btn"
-          onClick={onOpenCustomizer}
-          title="Open Avatar Customization Studio"
-        >
-          🎨 Customize Avatar
-        </button>
         <button
           className="dev-toggle-btn"
           onClick={() => setIsOpen(!isOpen)}

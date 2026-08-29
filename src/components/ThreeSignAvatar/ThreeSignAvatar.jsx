@@ -27,12 +27,15 @@ import { getInterpolatedSMPLXFrame } from '../../utils/smplxPklLoader';
 export function ThreeSignAvatar({
   currentItem,
   isIdle = true,
+  isPlaying = true,
   playbackRate = 1.0,
   onPoseComplete,
   config = DEFAULT_AVATAR_CONFIG
 }) {
   const mountRef = useRef(null);
   const targetPoseRef = useRef(SMPLX_ISL_POSES['IDLE']);
+  const isPlayingRef = useRef(isPlaying);
+  isPlayingRef.current = isPlaying;
 
   // Resolve customization
   const skin = SKIN_TONES.find((s) => s.id === config.skinToneId) || SKIN_TONES[1];
@@ -50,21 +53,21 @@ export function ThreeSignAvatar({
     }
 
     let pose = SMPLX_ISL_POSES['IDLE'];
-    if (!isIdle && token !== 'IDLE') {
+    if (!isIdle && isPlaying && token !== 'IDLE') {
       pose = isFingerspelling
         ? getSMPLXFingerspellPose(token)
         : SMPLX_ISL_POSES[token] || SMPLX_ISL_POSES['HELLO'];
     }
     targetPoseRef.current = pose;
 
-    if (!isIdle) {
+    if (!isIdle && isPlaying) {
       const duration = (pose.duration || 1200) / playbackRate;
       const timer = setTimeout(() => {
         if (onPoseComplete) onPoseComplete();
       }, duration);
       return () => clearTimeout(timer);
     }
-  }, [currentItem?.id, currentItem?.token, currentItem?.isFingerspelling, isIdle, playbackRate, onPoseComplete]);
+  }, [currentItem?.id, currentItem?.token, currentItem?.isFingerspelling, isIdle, isPlaying, playbackRate, onPoseComplete]);
 
   // Main Three.js Scene Setup
   useEffect(() => {
@@ -147,12 +150,13 @@ export function ThreeSignAvatar({
       // Smooth Interpolation
       const target = targetPoseRef.current;
       const smoothFactor = Math.min(1, delta * 16.0 * playbackRate);
+      const isPaused = !isPlayingRef.current;
 
-      // Limb sway & wrist wave active ONLY during IDLE
-      const isCurrentlyIdle = isIdle || target.name === 'IDLE';
-      const armSwayY = isCurrentlyIdle ? Math.sin(elapsed * 2.2) * 0.025 : 0;
-      const armSwayZ = isCurrentlyIdle ? Math.cos(elapsed * 1.8) * 0.015 : 0;
-      const wristRotOffset = isCurrentlyIdle ? Math.sin(elapsed * 3.4) * 0.02 : 0;
+      // Limb sway & wrist wave active ONLY during active IDLE (zero when paused)
+      const isCurrentlyIdle = (isIdle || target.name === 'IDLE' || isPaused);
+      const armSwayY = (isCurrentlyIdle && !isPaused) ? Math.sin(elapsed * 2.2) * 0.012 : 0;
+      const armSwayZ = (isCurrentlyIdle && !isPaused) ? Math.cos(elapsed * 1.8) * 0.008 : 0;
+      const wristRotOffset = 0;
 
       // Head & Neck
       if (target.head) {
@@ -166,7 +170,7 @@ export function ThreeSignAvatar({
 
       // Left Arm SMPL-X Hierarchy
       if (target.leftArm) {
-        const la = target.leftArm;
+        const la = isPaused ? { shoulder: { x: 0.2, y: 0.05, z: 0.1 }, elbow: 0.1, hand: 'rest_relaxed' } : target.leftArm;
         rig.leftShoulder.rotation.x = THREE.MathUtils.lerp(rig.leftShoulder.rotation.x, la.shoulder.x + armSwayY, smoothFactor);
         rig.leftShoulder.rotation.y = THREE.MathUtils.lerp(rig.leftShoulder.rotation.y, la.shoulder.y + armSwayZ, smoothFactor);
         rig.leftShoulder.rotation.z = THREE.MathUtils.lerp(rig.leftShoulder.rotation.z, la.shoulder.z, smoothFactor);
@@ -174,16 +178,16 @@ export function ThreeSignAvatar({
         rig.leftElbow.rotation.x = THREE.MathUtils.lerp(rig.leftElbow.rotation.x, la.elbow + armSwayY * 0.5, smoothFactor);
         rig.leftElbow.rotation.y = THREE.MathUtils.lerp(rig.leftElbow.rotation.y, (la.forearmTwist || 0) + wristRotOffset, smoothFactor);
 
-        rig.leftWrist.rotation.x = THREE.MathUtils.lerp(rig.leftWrist.rotation.x, la.wrist.x + wristRotOffset, smoothFactor);
-        rig.leftWrist.rotation.y = THREE.MathUtils.lerp(rig.leftWrist.rotation.y, la.wrist.y, smoothFactor);
-        rig.leftWrist.rotation.z = THREE.MathUtils.lerp(rig.leftWrist.rotation.z, la.wrist.z + wristRotOffset * 0.5, smoothFactor);
+        rig.leftWrist.rotation.x = THREE.MathUtils.lerp(rig.leftWrist.rotation.x, (la.wrist?.x || 0) + wristRotOffset, smoothFactor);
+        rig.leftWrist.rotation.y = THREE.MathUtils.lerp(rig.leftWrist.rotation.y, (la.wrist?.y || 0), smoothFactor);
+        rig.leftWrist.rotation.z = THREE.MathUtils.lerp(rig.leftWrist.rotation.z, (la.wrist?.z || 0) + wristRotOffset * 0.5, smoothFactor);
 
-        applyMANOHandShape(rig.leftHand, la.hand || 'rest_relaxed', smoothFactor, elapsed);
+        applyMANOHandShape(rig.leftHand, la.hand || 'rest_relaxed', smoothFactor, elapsed, isPaused || isCurrentlyIdle);
       }
 
       // Right Arm SMPL-X Hierarchy
       if (target.rightArm) {
-        const ra = target.rightArm;
+        const ra = isPaused ? { shoulder: { x: 0.2, y: -0.05, z: -0.1 }, elbow: 0.1, hand: 'rest_relaxed' } : target.rightArm;
         rig.rightShoulder.rotation.x = THREE.MathUtils.lerp(rig.rightShoulder.rotation.x, ra.shoulder.x + armSwayY, smoothFactor);
         rig.rightShoulder.rotation.y = THREE.MathUtils.lerp(rig.rightShoulder.rotation.y, ra.shoulder.y - armSwayZ, smoothFactor);
         rig.rightShoulder.rotation.z = THREE.MathUtils.lerp(rig.rightShoulder.rotation.z, ra.shoulder.z, smoothFactor);
@@ -191,11 +195,11 @@ export function ThreeSignAvatar({
         rig.rightElbow.rotation.x = THREE.MathUtils.lerp(rig.rightElbow.rotation.x, ra.elbow + armSwayY * 0.5, smoothFactor);
         rig.rightElbow.rotation.y = THREE.MathUtils.lerp(rig.rightElbow.rotation.y, (ra.forearmTwist || 0) - wristRotOffset, smoothFactor);
 
-        rig.rightWrist.rotation.x = THREE.MathUtils.lerp(rig.rightWrist.rotation.x, ra.wrist.x - wristRotOffset, smoothFactor);
-        rig.rightWrist.rotation.y = THREE.MathUtils.lerp(rig.rightWrist.rotation.y, ra.wrist.y, smoothFactor);
-        rig.rightWrist.rotation.z = THREE.MathUtils.lerp(rig.rightWrist.rotation.z, ra.wrist.z - wristRotOffset * 0.5, smoothFactor);
+        rig.rightWrist.rotation.x = THREE.MathUtils.lerp(rig.rightWrist.rotation.x, (ra.wrist?.x || 0) - wristRotOffset, smoothFactor);
+        rig.rightWrist.rotation.y = THREE.MathUtils.lerp(rig.rightWrist.rotation.y, (ra.wrist?.y || 0), smoothFactor);
+        rig.rightWrist.rotation.z = THREE.MathUtils.lerp(rig.rightWrist.rotation.z, (ra.wrist?.z || 0) - wristRotOffset * 0.5, smoothFactor);
 
-        applyMANOHandShape(rig.rightHand, ra.hand || 'rest_relaxed', smoothFactor, elapsed);
+        applyMANOHandShape(rig.rightHand, ra.hand || 'rest_relaxed', smoothFactor, elapsed, isPaused || isCurrentlyIdle);
       }
 
       renderer.render(scene, camera);
@@ -640,7 +644,7 @@ function buildRefinedMANOHand(skinMat, knuckleMat, isRight) {
 /**
  * Applies MANO Finger Joint Flexions & Multi-Axis Articulation
  */
-function applyMANOHandShape(handObj, shapeKey, smoothFactor, elapsed = 0) {
+function applyMANOHandShape(handObj, shapeKey, smoothFactor, elapsed = 0, isMotionPaused = false) {
   const shape = MANO_HAND_SHAPES[shapeKey] || MANO_HAND_SHAPES['rest_relaxed'];
   const fingers = handObj.fingers;
 
@@ -655,7 +659,7 @@ function applyMANOHandShape(handObj, shapeKey, smoothFactor, elapsed = 0) {
   ['thumb', 'index', 'middle', 'ring', 'pinky'].forEach((fName, fIdx) => {
     const joints = fingers[fName];
     const angles = shape[fName] || [0.2, 0.2, 0.2];
-    const flutter = Math.sin(elapsed * 4.8 + fIdx * 1.1) * 0.02;
+    const flutter = isMotionPaused ? 0 : Math.sin(elapsed * 4.8 + fIdx * 1.1) * 0.02;
 
     if (joints) {
       joints.mcp.rotation.x = THREE.MathUtils.lerp(joints.mcp.rotation.x, angles[0] + flutter, smoothFactor);

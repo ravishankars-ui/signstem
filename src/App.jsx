@@ -14,6 +14,7 @@ import { exportVideo } from './utils/videoExporter';
 import { LEARNING_PATHS } from './utils/learningPaths';
 
 const SPEEDS = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
+
 const extensionApi = globalThis.chrome?.storage ? globalThis.chrome : null;
 
 export function App() {
@@ -81,12 +82,12 @@ export function App() {
     } catch {}
   }, [themeMode, isLight]);
 
-  const toggleTheme = () => {
+  const toggleTheme = useCallback(() => {
     const next = isLight ? 'dark' : 'light';
     setThemeMode(next);
     setAvatarConfig(prev => ({ ...prev, themeMode: next }));
     flash(next === 'light' ? '☀️ Ivory White Theme Activated' : '🌙 Midnight Dark Theme Activated');
-  };
+  }, [isLight]);
 
   const flash = useCallback((msg, ms = 2500) => {
     setNotice(msg);
@@ -114,7 +115,7 @@ export function App() {
   const {
     queue, currentItem, isIdle, isPlaying, playbackRate, setPlaybackRate,
     enqueueTokens, handleAnimationEnd, handleAnimationError,
-    clearQueue, skipCurrent, togglePlayPause
+    clearQueue, skipCurrent, togglePlayPause, setIsPlaying
   } = useAnimationQueue({ onTokenStart: handleTokenStart, onSequenceComplete: handleSequenceComplete });
 
   useEffect(() => {
@@ -249,12 +250,10 @@ export function App() {
     tabStreamRef.current = null;
     tabAudioRef.current = null;
     setIsListeningTab(false);
-    flash('Tab listening stopped');
+    flash('Tab audio stopped');
   };
 
-  useEffect(() => () => { tabStreamRef.current?.getTracks().forEach(t => t.stop()); webcamStream?.getTracks().forEach(t => t.stop()); }, []);
-
-  // Bind video stream once without re-triggering playback pipeline resets on re-render
+  // Sync webcam stream to video element
   useEffect(() => {
     if (webcamVideoRef.current && webcamStream) {
       if (webcamVideoRef.current.srcObject !== webcamStream) {
@@ -350,21 +349,25 @@ export function App() {
           }
           break;
         }
+        case 'VIDEO_PAUSE': case 'PAUSE_SEQUENCE': setIsPlaying(false); break;
+        case 'VIDEO_PLAY': case 'RESUME_SEQUENCE': setIsPlaying(true); break;
         case 'STOP_SEQUENCE': case 'CLEAR_QUEUE': clearQueue(); break;
         case 'SKIP_CURRENT_SIGN': skipCurrent(); break;
         case 'SET_PLAYBACK_SPEED': if (typeof d.speed === 'number') setPlaybackRate(d.speed); break;
         case 'START_TAB_LISTEN': startTabListen(); break;
         case 'STOP_TAB_LISTEN': stopTabListen(); break;
-        case 'CONTROL_MINIMIZE': setIsMinimized(p => !p); break;
-        case 'CONTROL_MAXIMIZE': setIsMaximized(p => !p); setIsMinimized(false); break;
+        case 'TOGGLE_THEME': toggleTheme(); break;
+        case 'TOGGLE_CAMERA': toggleWebcam(); break;
+        case 'CONTROL_MINIMIZE': setIsMinimized(true); break;
+        case 'CONTROL_MAXIMIZE': setIsMaximized(true); setIsMinimized(false); break;
         case 'CONTROL_CLOSE': setIsHidden(true); break;
-        case 'CONTROL_RESTORE': setIsHidden(false); setIsMinimized(false); break;
+        case 'CONTROL_RESTORE': setIsHidden(false); setIsMinimized(false); setIsMaximized(false); break;
         default: break;
       }
     };
     window.addEventListener('message', handler);
     return () => window.removeEventListener('message', handler);
-  }, [enqueueTokens, clearQueue, skipCurrent, setPlaybackRate]);
+  }, [enqueueTokens, clearQueue, skipCurrent, setPlaybackRate, setIsPlaying, toggleTheme, toggleWebcam]);
 
   const submit = (e) => { e?.preventDefault(); if (input.trim()) processText(input.trim()); };
 
@@ -374,48 +377,46 @@ export function App() {
 
   return (
     <main style={S.root}>
-      {/* ─── Top Control Header ────────────────────────────── */}
-      <header style={S.header}>
-        <div style={S.headerBrand}>
-          <div style={S.brandIcon}>✦</div>
-          <span style={S.brandTitle}>SignSTEM</span>
-        </div>
-
-        <div style={S.headerActions}>
-          <div style={S.syncBadge}>
-            <span style={S.syncDot} />
-            <span>Sync</span>
+      {/* ─── Top Control Header (Shown ONLY in standalone mode; hidden in iframe to eliminate duplicate buttons) ── */}
+      {!inFrame && (
+        <header style={S.header}>
+          <div style={S.headerBrand}>
+            <div style={S.brandIcon}>✦</div>
+            <span style={S.brandTitle}>SignSTEM</span>
           </div>
 
-          <button
-            onClick={isListeningTab ? stopTabListen : startTabListen}
-            style={{ ...S.headerBtn, color: isListeningTab ? '#10b981' : undefined }}
-            title={isListeningTab ? 'Listening to Tab Audio' : 'Listen to Tab Audio'}
-          >
-            🎧
-          </button>
+          <div style={S.headerActions}>
+            <div style={S.syncBadge}>
+              <span style={S.syncDot} />
+              <span>Sync</span>
+            </div>
 
-          <button
-            onClick={toggleTheme}
-            style={S.themeToggleBtn}
-            title={isLight ? 'Switch to Midnight Dark' : 'Switch to Ivory White'}
-          >
-            {isLight ? '🌙' : '☀️'}
-          </button>
+            <button
+              onClick={isListeningTab ? stopTabListen : startTabListen}
+              style={{ ...S.headerBtn, color: isListeningTab ? '#10b981' : undefined }}
+              title={isListeningTab ? 'Listening to Tab Audio' : 'Listen to Tab Audio'}
+            >
+              🎧
+            </button>
 
-          <div style={S.windowControls}>
-            <button onClick={() => setIsMinimized(v => !v)} style={S.windowBtn} title="Minimize">
-              _
+            <button
+              onClick={toggleWebcam}
+              style={{ ...S.headerBtn, color: webcamActive ? '#10b981' : undefined }}
+              title={webcamActive ? 'Stop Live Camera AI' : 'Live Camera Recognition'}
+            >
+              📷
             </button>
-            <button onClick={() => setIsMaximized(v => !v)} style={S.windowBtn} title="Maximize">
-              □
-            </button>
-            <button onClick={() => setIsHidden(true)} style={{ ...S.windowBtn, ...S.closeBtn }} title="Close">
-              ✕
+
+            <button
+              onClick={toggleTheme}
+              style={S.themeToggleBtn}
+              title={isLight ? 'Switch to Midnight Dark' : 'Switch to Ivory White'}
+            >
+              {isLight ? '🌙' : '☀️'}
             </button>
           </div>
-        </div>
-      </header>
+        </header>
+      )}
 
       {/* ─── 3D Avatar Stage ───────────────────────────────── */}
       <div style={{ ...S.stage, minHeight: isMinimized ? 0 : undefined }}>
@@ -483,7 +484,7 @@ export function App() {
       </div>
 
       {/* ─── Subtitle Bar ───────────────────────────────────── */}
-      {!isMinimized && <SubtitleBar currentItem={currentItem} queue={queue} isIdle={isIdle} />}
+      {!isMinimized && <SubtitleBar currentItem={currentItem} queue={queue} isIdle={isIdle} isPlaying={isPlaying} />}
 
       {/* ─── Speed Ramp ─────────────────────────────────────── */}
       {!isMinimized && !isIdle && (
@@ -506,7 +507,7 @@ export function App() {
           <div style={S.pathsGrid}>
             {LEARNING_PATHS.map(p => (
               <button key={p.id} onClick={() => enqueueTokens(p.tokens, 'replace')} style={S.pathBtn} title={p.desc}>
-                <span style={S.pathIcon}>{p.icon}</span>
+                <span style={p.icon ? S.pathIcon : {}}>{p.icon}</span>
                 <span style={S.pathName}>{p.name}</span>
                 <span style={S.pathCount}>{p.tokens.length}</span>
               </button>
@@ -519,19 +520,32 @@ export function App() {
       {!isMinimized && (
         <div style={S.toolbar}>
           <form onSubmit={submit} style={S.inputWrap}>
-            <input
-              type="text"
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              placeholder="Type a word or sentence..."
-              style={S.input}
-            />
+            <div style={S.inputContainer}>
+              <input
+                type="text"
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                placeholder="Type a word or sentence..."
+                style={S.input}
+              />
+              {input.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setInput('')}
+                  style={S.clearInputBtn}
+                  title="Clear text"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
             <button type="submit" style={S.signBtn}>Sign</button>
           </form>
 
           <div style={S.actions}>
             <ToolBtn isLight={isLight} icon={isListeningVoice ? '⏹' : '🎤'} active={isListeningVoice} onClick={toggleVoice} title="Voice Input (M)" />
             <ToolBtn isLight={isLight} icon="📷" active={webcamActive} onClick={toggleWebcam} title={webcamActive ? 'Stop Live Camera AI' : 'Start Live Camera AI (Sign to 3D Avatar)'} />
+            <ToolBtn isLight={isLight} icon={isLight ? '🌙' : '☀️'} onClick={toggleTheme} title={isLight ? 'Switch to Midnight Dark' : 'Switch to Ivory White'} />
             <div style={S.divider} />
             <ToolBtn isLight={isLight} icon="🔗" onClick={handleShare} title="Share Sign Link" />
             <ToolBtn isLight={isLight} icon="💾" onClick={handleExport} title="Export Video" />
@@ -570,10 +584,10 @@ function ToolBtn({ icon, active, onClick, title, isLight }) {
       onClick={onClick}
       title={title}
       style={{
-        width: 30,
-        height: 30,
-        borderRadius: 9,
-        border: isLight ? '1px solid rgba(215, 203, 185, 0.6)' : '1px solid rgba(255, 255, 255, 0.08)',
+        width: 32,
+        height: 32,
+        borderRadius: 10,
+        border: isLight ? '1px solid rgba(215, 203, 185, 0.7)' : '1px solid rgba(255, 255, 255, 0.08)',
         background: active
           ? (isLight ? 'rgba(79, 70, 229, 0.15)' : 'rgba(99, 102, 241, 0.25)')
           : (isLight ? '#ffffff' : 'rgba(255, 255, 255, 0.06)'),
@@ -587,7 +601,7 @@ function ToolBtn({ icon, active, onClick, title, isLight }) {
         justifyContent: 'center',
         fontFamily: 'inherit',
         boxShadow: isLight ? '0 1px 3px rgba(0,0,0,0.04)' : 'none',
-        transition: 'all 0.2s',
+        transition: 'all 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
       }}
     >
       {icon}
@@ -700,29 +714,6 @@ function getStyles(isLight, inFrame) {
       boxShadow: isLight ? '0 2px 8px rgba(197, 155, 39, 0.2)' : '0 2px 8px rgba(251, 191, 36, 0.2)',
       fontWeight: 700,
       transition: 'all 0.15s ease',
-    },
-    windowControls: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 3,
-      marginLeft: 4,
-    },
-    windowBtn: {
-      width: 22,
-      height: 22,
-      borderRadius: 6,
-      border: 'none',
-      background: isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.06)',
-      color: isLight ? '#78716c' : '#94a3b8',
-      fontSize: '10px',
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      transition: 'all 0.15s ease',
-    },
-    closeBtn: {
-      color: '#ef4444',
     },
     stage: {
       flex: 1,
@@ -903,12 +894,18 @@ function getStyles(isLight, inFrame) {
       gap: 6,
       marginBottom: 7,
     },
-    input: {
+    inputContainer: {
       flex: 1,
+      position: 'relative',
+      display: 'flex',
+      alignItems: 'center',
+    },
+    input: {
+      width: '100%',
       background: isLight ? '#ffffff' : 'rgba(255,255,255,0.06)',
       border: isLight ? '1px solid rgba(215, 203, 185, 0.85)' : '1px solid rgba(255,255,255,0.12)',
       borderRadius: 11,
-      padding: '8px 12px',
+      padding: '8px 28px 8px 12px',
       fontSize: '11px',
       color: isLight ? '#1e1b18' : '#f8fafc',
       outline: 'none',
@@ -917,6 +914,19 @@ function getStyles(isLight, inFrame) {
         ? '0 2px 6px rgba(45, 30, 20, 0.03), inset 0 1px 2px rgba(0,0,0,0.02)'
         : 'inset 0 1px 2px rgba(0,0,0,0.2)',
       transition: 'border-color 0.2s, box-shadow 0.2s',
+    },
+    clearInputBtn: {
+      position: 'absolute',
+      right: 8,
+      background: 'none',
+      border: 'none',
+      color: isLight ? '#a8a29e' : '#64748b',
+      fontSize: '11px',
+      cursor: 'pointer',
+      padding: '2px 4px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     signBtn: {
       padding: '0 18px',

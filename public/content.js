@@ -29,7 +29,8 @@
             <span id="ss-sync-label">Sync</span>
           </button>
           <button class="ss-hdr-btn" id="ss-tab" title="Listen tab audio">🎧</button>
-          <button class="ss-hdr-btn" id="ss-cam" title="Live recognition">📷</button>
+          <button class="ss-hdr-btn" id="ss-cam" title="Toggle Live Camera AI">📷</button>
+          <button class="ss-hdr-btn" id="ss-theme" title="Toggle Dark / Ivory Theme">🌙</button>
         </div>
         <div class="ss-window-controls">
           <button class="ss-win-btn" id="ss-min" title="Minimize">─</button>
@@ -72,6 +73,8 @@
       w.classList.toggle('ss-minimized', minimized);
       if (stage) stage.style.display = minimized ? 'none' : 'flex';
       minBtn.textContent = minimized ? '┼' : '─';
+      minBtn.title = minimized ? 'Restore Window' : 'Minimize';
+      post({ type: minimized ? 'CONTROL_MINIMIZE' : 'CONTROL_RESTORE' });
     };
 
     // Maximize
@@ -80,21 +83,96 @@
     maxBtn.onmousedown = e => e.stopPropagation();
     maxBtn.onclick = (e) => {
       e.preventDefault(); e.stopPropagation();
+      if (minimized) {
+        minimized = false;
+        w.classList.remove('ss-minimized');
+        if (stage) stage.style.display = 'flex';
+        minBtn.textContent = '─';
+        minBtn.title = 'Minimize';
+      }
       expanded = !expanded;
       w.classList.toggle('ss-expanded', expanded);
       maxBtn.textContent = expanded ? '❐' : '□';
+      maxBtn.title = expanded ? 'Restore Size' : 'Maximize';
+      post({ type: expanded ? 'CONTROL_MAXIMIZE' : 'CONTROL_RESTORE' });
     };
 
     // Pill restore
     pill.onclick = (e) => {
       e.preventDefault(); e.stopPropagation();
-      post({ type: 'CONTROL_RESTORE' });
       w.style.display = 'flex'; pill.style.display = 'none';
       minimized = expanded = false;
       w.classList.remove('ss-minimized', 'ss-expanded');
       if (stage) stage.style.display = 'flex';
-      minBtn.textContent = '─'; maxBtn.textContent = '□';
+      minBtn.textContent = '─'; minBtn.title = 'Minimize';
+      maxBtn.textContent = '□'; maxBtn.title = 'Maximize';
+      post({ type: 'CONTROL_RESTORE' });
     };
+
+    // Video Playback & Pause State Tracker
+    let isVideoPaused = false;
+    const watchedVideos = new WeakSet();
+
+    function findPrimaryVideo() {
+      // 1. YouTube main video player
+      const ytVideo = document.querySelector('video.html5-main-video') || document.querySelector('.video-stream.html5-main-video');
+      if (ytVideo) return ytVideo;
+
+      // 2. All video elements on page
+      const allVideos = Array.from(document.querySelectorAll('video'));
+      if (allVideos.length === 0) return null;
+      if (allVideos.length === 1) return allVideos[0];
+
+      // Find active playing video
+      const playing = allVideos.find(v => !v.paused && v.readyState > 1);
+      if (playing) return playing;
+
+      // Return largest video element by rendered surface area
+      return allVideos.reduce((best, cur) => {
+        const r1 = best ? (best.offsetWidth * best.offsetHeight) : 0;
+        const r2 = cur.offsetWidth * cur.offsetHeight;
+        return r2 > r1 ? cur : best;
+      }, allVideos[0]);
+    }
+
+    function handleVideoState(video) {
+      if (!video) return;
+      const paused = Boolean(video.paused || video.ended);
+      if (isVideoPaused !== paused) {
+        isVideoPaused = paused;
+        post({
+          type: paused ? 'VIDEO_PAUSE' : 'VIDEO_PLAY',
+          isPaused: paused,
+          currentTime: video.currentTime
+        });
+      }
+    }
+
+    function bindVideoEvents() {
+      const videos = document.querySelectorAll('video');
+      videos.forEach(v => {
+        if (!watchedVideos.has(v)) {
+          watchedVideos.add(v);
+          const update = () => {
+            const primary = findPrimaryVideo();
+            if (primary) handleVideoState(primary);
+          };
+          v.addEventListener('pause', update);
+          v.addEventListener('play', update);
+          v.addEventListener('playing', update);
+          v.addEventListener('ended', update);
+          v.addEventListener('waiting', update);
+          v.addEventListener('seeking', () => {
+            lastCaptionFull = '';
+            update();
+          });
+          v.addEventListener('seeked', update);
+          v.addEventListener('ratechange', () => {
+            post({ type: 'SET_PLAYBACK_SPEED', speed: v.playbackRate });
+          });
+        }
+      });
+    }
 
     // Live Video Caption Streamer
     let lastCaptionFull = '';
@@ -147,6 +225,16 @@
     }
 
     function sync() {
+      bindVideoEvents();
+      const primaryVideo = findPrimaryVideo();
+      if (primaryVideo) {
+        handleVideoState(primaryVideo);
+        // When video is paused or ended, halt caption streaming and keep avatar rested
+        if (primaryVideo.paused || primaryVideo.ended) {
+          return;
+        }
+      }
+
       if (!isSyncActive) return;
       tryEnableYT();
       const raw = getCaption();
@@ -200,17 +288,26 @@
       post({ type: tabOn ? 'START_TAB_LISTEN' : 'STOP_TAB_LISTEN' });
     };
 
-    // Recognition
+    // Live Camera AI Toggle
+    let camOn = false;
     const camBtn = $('#ss-cam');
     camBtn.onmousedown = e => e.stopPropagation();
     camBtn.onclick = (e) => {
       e.preventDefault(); e.stopPropagation();
-      if (ext?.runtime) {
-        ext.runtime.sendMessage({ type: 'OPEN_RECOGNITION' });
-        camBtn.classList.add('ss-active');
-      } else {
-        window.open('sidepanel.html', '_blank');
-      }
+      camOn = !camOn;
+      camBtn.classList.toggle('ss-active', camOn);
+      post({ type: 'TOGGLE_CAMERA' });
+    };
+
+    // Theme Mode Toggle
+    let isLightMode = true;
+    const themeBtn = $('#ss-theme');
+    themeBtn.onmousedown = e => e.stopPropagation();
+    themeBtn.onclick = (e) => {
+      e.preventDefault(); e.stopPropagation();
+      isLightMode = !isLightMode;
+      themeBtn.textContent = isLightMode ? '🌙' : '☀️';
+      post({ type: 'TOGGLE_THEME' });
     };
 
     // Toggle from icon

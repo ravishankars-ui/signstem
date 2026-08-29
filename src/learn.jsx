@@ -1,15 +1,13 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import './index.css';
-import { RealisticHumanAvatar } from './components/HumanSignAvatar/RealisticHumanAvatar';
+import { Player } from './components/Player';
 import { useAnimationQueue } from './hooks/useAnimationQueue';
 import { useScreenCapture } from './hooks/useScreenCapture';
 import { useSignRecognition } from './hooks/useSignRecognition';
-import { CustomizerModal } from './components/CustomizerModal';
 import { DEFAULT_AVATAR_CONFIG, EXTENSION_THEMES } from './constants/avatarCustomization';
 import { ISL_WORD_POSES } from './constants/islPoseData';
 import { transformToISLGrammar, detectLongWords, breakIntoFingerspelling } from './utils/islGrammarEngine';
-import { importCustomAnimation } from './utils/animationFileImporter';
 
 const extensionApi = globalThis.chrome?.storage ? globalThis.chrome : null;
 
@@ -120,7 +118,6 @@ function StudioApp() {
   const [activeCategory, setActiveCategory] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [customInputText, setCustomInputText] = useState('');
-  const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
 
   // Practice Mode State
   const [quizIndex, setQuizIndex] = useState(0);
@@ -200,6 +197,7 @@ function StudioApp() {
     queue,
     currentItem,
     isIdle,
+    isPlaying,
     playbackRate,
     setPlaybackRate,
     enqueueTokens,
@@ -207,6 +205,10 @@ function StudioApp() {
     clearQueue,
     skipCurrent
   } = useAnimationQueue();
+
+  // Video and Overlay Canvas Refs for MediaPipe Real-Time Tracking
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
 
   // Screen/Webcam Capture Hook
   const {
@@ -217,6 +219,14 @@ function StudioApp() {
     startCapture,
     stopCapture
   } = useScreenCapture();
+
+  // Keep video element synced to active stream
+  useEffect(() => {
+    if (stream && videoRef.current) {
+      videoRef.current.srcObject = stream;
+      videoRef.current.play().catch((e) => console.debug('[learn] Video playback error:', e));
+    }
+  }, [stream]);
 
   // Voice ASR & Speech Notice State
   const [isListeningVoice, setIsListeningVoice] = useState(false);
@@ -257,7 +267,10 @@ function StudioApp() {
     facialCues,
     statusMessage: recogStatus
   } = useSignRecognition({
+    videoRef,
+    canvasRef,
     stream,
+    isMirrored: sourceType === 'camera',
     enabled: recogActive && Boolean(stream),
     onSignRecognized: handleSignRecognized,
     confidenceThreshold: 50
@@ -390,27 +403,6 @@ function StudioApp() {
     }
   };
 
-  // Handle Custom Animation File Upload (.json, .glb, .vrm)
-  const handleFileUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const content = event.target?.result;
-      const res = importCustomAnimation(content, 'json');
-      if (res.success) {
-        alert(`Success! Registered custom animation signs: ${res.registeredSigns.join(', ')}`);
-        if (res.registeredSigns.length > 0) {
-          enqueueTokens(res.registeredSigns[0], 'replace');
-        }
-      } else {
-        alert(`Import Error: ${res.error}`);
-      }
-    };
-    reader.readAsText(file);
-  };
-
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     if (tab !== 'recognize' && isCapturing) {
@@ -490,24 +482,6 @@ function StudioApp() {
 
         {/* Toolbar Controls */}
         <div className="flex items-center gap-2.5">
-          {/* Gender Switcher Button */}
-          <button
-            onClick={() => {
-              setAvatarConfig(prev => ({
-                ...prev,
-                gender: prev.gender === 'male' ? 'female' : 'male'
-              }));
-            }}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold transition-all ${
-              isLightMode
-                ? 'bg-slate-200 border-slate-300 text-slate-800 hover:bg-slate-300'
-                : 'bg-white/10 border-white/15 text-indigo-300 hover:bg-white/20'
-            }`}
-            title="Toggle Female / Male Avatar"
-          >
-            <span>{avatarConfig.gender === 'male' ? '👨 Male Presenter' : '👩 Female Presenter'}</span>
-          </button>
-
           {/* Dark / Light Mode Toggle */}
           <button
             onClick={toggleThemeMode}
@@ -519,34 +493,6 @@ function StudioApp() {
             title="Toggle Light / Dark Theme Mode"
           >
             <span>{isLightMode ? '🌙 Dark Mode' : '☀️ Light Mode'}</span>
-          </button>
-
-          {/* Custom Animation File Importer */}
-          <label className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
-            isLightMode
-              ? 'bg-slate-200 border-slate-300 text-slate-800 hover:bg-slate-300'
-              : 'bg-white/10 border-white/15 text-teal-300 hover:bg-white/20'
-          }`} title="Upload Custom Animation File (.json, .glb, .vrm)">
-            <span>📁 Import Animation</span>
-            <input
-              type="file"
-              accept=".json,.glb,.vrm,.bvh"
-              onChange={handleFileUpload}
-              className="hidden"
-            />
-          </label>
-
-          <button
-            onClick={() => setIsCustomizerOpen(true)}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-semibold transition-colors duration-400 ${
-              isLightMode
-                ? 'bg-white border-slate-300 text-slate-700 hover:bg-slate-100'
-                : 'bg-white/5 border-white/10 text-slate-200 hover:bg-white/10'
-            }`}
-            title="Customize Avatar & Themes"
-          >
-            <span>🎨</span>
-            <span>Avatar Studio</span>
           </button>
 
           <button
@@ -588,14 +534,15 @@ function StudioApp() {
               </span>
             </div>
 
-            {/* Realistic Human Avatar Presenter */}
-            <div className="flex-1 w-full h-full flex items-center justify-center p-2 relative z-10">
-              <RealisticHumanAvatar
+            {/* 3D Sign Language Avatar Presenter */}
+            <div className="flex-1 w-full h-full flex items-center justify-center p-0 relative z-10 overflow-hidden">
+              <Player
                 currentItem={currentItem}
-                isIdle={isIdle}
+                nextItems={queue}
+                isPlaying={isPlaying && !isIdle}
                 playbackRate={playbackRate}
-                onPoseComplete={handleAnimationEnd}
-                config={avatarConfig}
+                onEnded={handleAnimationEnd}
+                avatarConfig={avatarConfig}
               />
             </div>
 
@@ -987,15 +934,15 @@ function StudioApp() {
                       isCameraExpanded ? 'fixed inset-4 z-50 shadow-2xl flex flex-col justify-center items-center bg-slate-950/95 backdrop-blur-xl' : 'w-full h-[380px] sm:h-[440px] shadow-lg'
                     }`}>
                       <video
-                        ref={(ref) => {
-                          if (ref && stream && ref.srcObject !== stream) {
-                            ref.srcObject = stream;
-                            ref.play().catch(() => {});
-                          }
-                        }}
-                        className={`w-full h-full ${videoFitMode === 'contain' ? 'object-contain' : 'object-cover'}`}
+                        ref={videoRef}
+                        className={`w-full h-full ${videoFitMode === 'contain' ? 'object-contain' : 'object-cover'} ${sourceType === 'camera' ? 'scale-x-[-1]' : ''}`}
                         muted
                         playsInline
+                        autoPlay
+                      />
+                      <canvas
+                        ref={canvasRef}
+                        className={`absolute inset-0 w-full h-full pointer-events-none ${sourceType === 'camera' ? 'scale-x-[-1]' : ''}`}
                       />
                       {/* Top Overlay Badges & Controls */}
                       <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-auto">
@@ -1209,13 +1156,7 @@ function StudioApp() {
         </div>
       )}
 
-      {/* ─── Avatar Customizer Modal ────────────────────────────────────────── */}
-      <CustomizerModal
-        isOpen={isCustomizerOpen}
-        onClose={() => setIsCustomizerOpen(false)}
-        config={avatarConfig}
-        onUpdateConfig={handleUpdateAvatarConfig}
-      />
+      {/* Quiz Overlay */}
     </div>
   );
 }
